@@ -8,7 +8,7 @@ Use Conventional Commits (`feat:`, `chore:`, `fix:`) when implementing items.
 
 ### Phase 0 – Foundation & Scaffolding
 - [x] chore: Initialize repository structure, MIT license, .gitignore, basic README, folder layout
-- [ ] chore: Docker Compose base (Redpanda, MinIO, Prometheus, Grafana, Postgres for Airflow)
+- [x] chore: Docker Compose base (Redpanda, MinIO, Prometheus, Grafana, Postgres for Airflow) — done 2026-09-05 (`docker-compose.yml` + infra provisioning)
 - [ ] chore: Project tooling (pyproject.toml / uv or Poetry, pre-commit, ruff, mypy, Makefile)
 - [ ] chore: CI skeleton (GitHub Actions: lint, test, build)
 - [ ] chore: Config management (pydantic-settings, local vs Snowflake profiles)

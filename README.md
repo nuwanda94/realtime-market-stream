@@ -70,6 +70,8 @@ See progress and remaining work in:
 - [Project Plan](PROJECT_PLAN.md) – full phased roadmap
 - [Task Tracker](TASKS.md) – checklist of remaining work
 
+Phase 0 local infra is available: `docker compose up -d` starts Redpanda, MinIO, Prometheus, Grafana, and Postgres (Airflow metadata).
+
 ---
 
 ## Tech Stack (locked decisions)
@@ -111,6 +113,7 @@ realtime-market-stream/
 ├── scripts/
 ├── tests/
 ├── docs/
+├── docker-compose.yml
 ├── PROJECT_PLAN.md
 ├── TASKS.md
 └── .env.example
@@ -118,16 +121,23 @@ realtime-market-stream/
 
 ---
 
-## Quick Start (once scaffolding is complete)
+## Quick Start
 
 ```bash
 cp .env.example .env
-make up          # starts Redpanda, MinIO, etc.
-make produce     # synthetic ticks
-make dashboard   # open Streamlit
+docker compose up -d
 ```
 
-Detailed instructions will appear here as the corresponding tasks are completed.
+| URL | Service |
+|-----|---------|
+| http://localhost:8080 | Redpanda Console |
+| http://localhost:9001 | MinIO Console (`minioadmin` / `minioadmin`) |
+| http://localhost:3000 | Grafana (`admin` / `admin`) |
+| http://localhost:9090 | Prometheus |
+| localhost:19092 | Redpanda Kafka API |
+| localhost:5432 | Postgres (`airflow` / `airflow`) |
+
+See [infra/docker/README.md](infra/docker/README.md) for details. Application `make` targets land in the tooling task.
 
 ---
 
