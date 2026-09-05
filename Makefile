@@ -4,7 +4,7 @@
 PYTHON ?= python3
 UV := $(shell command -v uv 2>/dev/null)
 
-.PHONY: help install install-dev lint format typecheck test pre-commit-install pre-commit clean compose-up compose-down generate-ticks create-topics ingest ci
+.PHONY: help install install-dev lint format typecheck test pre-commit-install pre-commit clean compose-up compose-down generate-ticks create-topics ingest bronze ci
 
 help:
 	@echo "realtime-market-stream targets:"
@@ -17,6 +17,7 @@ help:
 	@echo "  make ci                  Run the same checks CI runs (lint + format check + mypy + test)"
 	@echo "  make generate-ticks      Print synthetic ticks as JSONL (COUNT=10 SYMBOLS=AAPL,MSFT)"
 	@echo "  make ingest              Publish ticks to Redpanda (COUNT=20 SOURCE=synthetic)"
+	@echo "  make bronze              Land raw-ticks into Bronze (MAX_RECORDS=20 BATCH_SIZE=10)"
 	@echo "  make create-topics       Idempotently create Redpanda topics (DRY_RUN=1 to preview)"
 	@echo "  make pre-commit-install  Install git hooks (pre-commit + pre-push)"
 	@echo "  make pre-commit          Run all pre-commit hooks on all files"
@@ -62,12 +63,18 @@ RATE ?=
 DRY_RUN ?=
 SOURCE ?= synthetic
 WS_URL ?=
+MAX_RECORDS ?=
+BATCH_SIZE ?= 50
+DATA_ROOT ?=
 
 generate-ticks:
 	$(PYTHON) scripts/generate_ticks.py --count $(COUNT) $(if $(SYMBOLS),--symbols $(SYMBOLS),) $(if $(RATE),--rate $(RATE),)
 
 ingest:
 	$(PYTHON) scripts/run_ingestion.py --source $(SOURCE) --count $(COUNT) $(if $(WS_URL),--ws-url $(WS_URL),)
+
+bronze:
+	$(PYTHON) scripts/run_bronze.py --batch-size $(BATCH_SIZE) $(if $(MAX_RECORDS),--max-records $(MAX_RECORDS),) $(if $(DATA_ROOT),--data-root $(DATA_ROOT),)
 
 create-topics:
 	$(PYTHON) scripts/create_topics.py $(if $(DRY_RUN),--dry-run,)
