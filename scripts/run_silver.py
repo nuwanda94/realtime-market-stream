@@ -14,7 +14,7 @@ import sys
 
 from realtime_market_stream.config.settings import get_settings
 from realtime_market_stream.processing.silver import run_silver
-from realtime_market_stream.sinks.silver import FilesystemSilverSink
+from realtime_market_stream.sinks.delta import build_silver_sink
 
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -44,10 +44,7 @@ def main(argv: list[str] | None = None) -> int:
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
     settings = get_settings()
-    sink = FilesystemSilverSink.from_settings(
-        settings,
-        local_root=args.data_root or None,
-    )
+    sink = build_silver_sink(settings, local_root=args.data_root or None)
     stats = run_silver(
         max_records=args.max_records,
         window_seconds=args.window_seconds,

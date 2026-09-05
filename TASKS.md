@@ -19,7 +19,7 @@ Use Conventional Commits (`feat:`, `chore:`, `fix:`) when implementing items.
 - [x] feat: Ingestion service — done 2026-09-05 (`src/realtime_market_stream/ingestion/service.py`, websocket + synthetic fallback, schema validation, DLQ)
 - [x] feat: Stream processor Bronze — done 2026-09-05 (`src/realtime_market_stream/processing/bronze.py`, partitioned sink, DLQ on schema failure)
 - [x] feat: Stream processor Silver — done 2026-09-05 (`src/realtime_market_stream/processing/silver.py`, dedup, enrichment, tumbling OHLC, `enriched-ticks`)
-- [ ] feat: Delta / Iceberg sink
+- [x] feat: Delta / Iceberg sink — done 2026-09-05 (`src/realtime_market_stream/sinks/delta.py`, symbol+date partitions, `LAKEHOUSE_FORMAT=delta|iceberg|jsonl`)
 - [ ] chore: Schema registry / JSON Schema
 - [ ] feat: Dead-letter queue handling + replay tool
 - [ ] fix: Idempotency & exactly-once

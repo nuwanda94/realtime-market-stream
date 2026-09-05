@@ -14,7 +14,7 @@ import sys
 
 from realtime_market_stream.config.settings import get_settings
 from realtime_market_stream.processing.bronze import run_bronze
-from realtime_market_stream.sinks.bronze import FilesystemBronzeSink
+from realtime_market_stream.sinks.delta import build_bronze_sink
 
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -42,10 +42,7 @@ def main(argv: list[str] | None = None) -> int:
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
     settings = get_settings()
-    sink = FilesystemBronzeSink.from_settings(
-        settings,
-        local_root=args.data_root or None,
-    )
+    sink = build_bronze_sink(settings, local_root=args.data_root or None)
     stats = run_bronze(
         max_records=args.max_records,
         batch_size=args.batch_size,
