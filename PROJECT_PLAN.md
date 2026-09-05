@@ -16,7 +16,7 @@ Progress is tracked in `TASKS.md`.
 - [x] **chore**: Docker Compose base (Redpanda, MinIO, Prometheus, Grafana, Postgres for Airflow)
 - [x] **chore**: Project tooling (pyproject.toml / uv or Poetry, pre-commit, ruff, mypy, Makefile) — 2026-09-05
 - [x] **chore**: CI skeleton (GitHub Actions: lint, test, build) — 2026-09-05 (`.github/workflows/ci.yml`)
-- [ ] **chore**: Config management (pydantic-settings, local vs Snowflake profiles)
+- [x] **chore**: Config management (pydantic-settings, local vs Snowflake profiles) — 2026-09-05
 - [ ] **feat**: Synthetic tick generator (realistic OHLCV + trade ticks, configurable rate)
 - [ ] **chore**: Topic creation script / auto-create Kafka topics (raw-ticks, enriched-ticks, alerts, dlq)
 

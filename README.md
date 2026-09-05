@@ -36,28 +36,28 @@ Built iteratively with Conventional Commits (`feat` / `chore` / `fix`).
 
 ```
 Live / Synthetic Market Ticks
-          │
-          ▼
+          |
+          v
    Ingestion (Python)
-          │
-          ▼
+          |
+          v
      Redpanda / Kafka
    (raw-ticks, enriched, alerts, dlq)
-          │
-          ▼
+          |
+          v
  Stream Processing (Quix Streams / Bytewax / PyFlink)
    • Bronze  – raw, schema-validated
    • Silver  – cleaned, windowed OHLC, enriched
    • Gold    – features, anomaly scores
-          │
-          ▼
- ┌─────────────────────┬──────────────────────┐
- │  Local Lakehouse    │  Optional Cloud      │
- │  Delta Lake /       │  Snowflake           │
- │  Iceberg on MinIO   │  (Snowpipe Streaming)│
- └─────────────────────┴──────────────────────┘
-          │
-          ▼
+          |
+          v
+ +---------------------+----------------------+
+ |  Local Lakehouse    |  Optional Cloud      |
+ |  Delta Lake /       |  Snowflake           |
+ |  Iceberg on MinIO   |  (Snowpipe Streaming)|
+ +---------------------+----------------------+
+          |
+          v
  FastAPI  +  Streamlit Dashboard  +  DuckDB/Polars queries
 ```
 
@@ -72,6 +72,13 @@ See progress and remaining work in:
 - [Task Tracker](TASKS.md) – checklist of remaining work
 
 Phase 0 local infra is available: `docker compose up -d` starts Redpanda, MinIO, Prometheus, Grafana, and Postgres (Airflow metadata).
+
+Configuration uses **pydantic-settings**. Copy `.env.example` to `.env` and pick a profile:
+
+- `APP_ENV=local` (default) — Redpanda + MinIO; Snowflake fields may stay empty.
+- `APP_ENV=snowflake` — requires `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_USER`, `SNOWFLAKE_WAREHOUSE`, `SNOWFLAKE_DATABASE`, and `SNOWFLAKE_SCHEMA`.
+
+Load settings in code with `from realtime_market_stream.config import get_settings`.
 
 CI (GitHub Actions) runs ruff, mypy, pytest (3.11 + 3.12), and a package build on every push and pull request to `main`.
 

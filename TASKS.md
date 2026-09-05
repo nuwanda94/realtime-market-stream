@@ -11,7 +11,7 @@ Use Conventional Commits (`feat:`, `chore:`, `fix:`) when implementing items.
 - [x] chore: Docker Compose base (Redpanda, MinIO, Prometheus, Grafana, Postgres for Airflow) — done 2026-09-05 (`docker-compose.yml` + infra provisioning)
 - [x] chore: Project tooling (pyproject.toml / uv or Poetry, pre-commit, ruff, mypy, Makefile) — done 2026-09-05 (`pyproject.toml`, `.pre-commit-config.yaml`, `Makefile`)
 - [x] chore: CI skeleton (GitHub Actions: lint, test, build) — done 2026-09-05 (`.github/workflows/ci.yml`)
-- [ ] chore: Config management (pydantic-settings, local vs Snowflake profiles)
+- [x] chore: Config management (pydantic-settings, local vs Snowflake profiles) — done 2026-09-05 (`src/realtime_market_stream/config/settings.py`)
 - [ ] feat: Synthetic tick generator (realistic OHLCV + trade ticks, configurable rate)
 - [ ] chore: Topic creation script / auto-create Kafka topics
 
