@@ -8,6 +8,9 @@ routed to the DLQ topic.
 The lakehouse write is abstracted behind :class:`BronzeSink` so unit tests
 need neither Redpanda nor MinIO. ``build_bronze_sink`` selects JSONL, Delta,
 or Iceberg from ``LAKEHOUSE_FORMAT``.
+
+Offsets are committed only after a successful sink write (see
+:mod:`realtime_market_stream.processing.checkpoint`).
 """
 
 from __future__ import annotations
@@ -29,6 +32,14 @@ from realtime_market_stream.ingestion.service import (
     encode_dlq,
     parse_market_event,
 )
+from realtime_market_stream.processing.checkpoint import (
+    ConsumedRecord,
+    FileCheckpointStore,
+    OffsetMap,
+    ProcessorCheckpoint,
+    iter_unprocessed,
+    records_from_values,
+)
 from realtime_market_stream.schemas.ticks import OhlcvBar, TradeTick
 from realtime_market_stream.sinks.bronze import BronzeRecord, BronzeSink
 from realtime_market_stream.sinks.delta import build_bronze_sink
@@ -41,13 +52,15 @@ MarketEvent = TradeTick | OhlcvBar
 class EventConsumer(Protocol):
     """Minimal consumer so tests can inject a fake."""
 
-    def poll(self) -> Iterator[tuple[bytes | None, bytes]]: ...
+    def poll(self) -> Iterator[ConsumedRecord]: ...
 
     def close(self) -> None: ...
 
+    def commit_offsets(self, records: list[ConsumedRecord]) -> None: ...
+
 
 class KafkaEventConsumer:
-    """Thin kafka-python consumer wrapper."""
+    """Thin kafka-python consumer wrapper with manual offset commits."""
 
     def __init__(
         self,
@@ -63,15 +76,42 @@ class KafkaEventConsumer:
             bootstrap_servers=bootstrap_servers,
             group_id=group_id,
             auto_offset_reset=auto_offset_reset,
-            enable_auto_commit=True,
+            enable_auto_commit=False,
             consumer_timeout_ms=1000,
         )
 
-    def poll(self) -> Iterator[tuple[bytes | None, bytes]]:
+    def poll(self) -> Iterator[ConsumedRecord]:
         for message in self._consumer:
             key = message.key if isinstance(message.key, (bytes, type(None))) else None
             value = message.value if isinstance(message.value, bytes) else b""
-            yield key, value
+            yield ConsumedRecord(
+                key=key,
+                value=value,
+                topic=str(message.topic),
+                partition=int(message.partition),
+                offset=int(message.offset),
+            )
+
+    def commit_offsets(self, records: list[ConsumedRecord]) -> None:
+        if not records:
+            return
+        from kafka.structs import OffsetAndMetadata, TopicPartition
+
+        latest: dict[tuple[str, int], int] = {}
+        for record in records:
+            if record.offset < 0 or not record.topic:
+                continue
+            key = (record.topic, record.partition)
+            current = latest.get(key, -1)
+            if record.offset > current:
+                latest[key] = record.offset
+        if not latest:
+            return
+        payload = {
+            TopicPartition(topic, partition): OffsetAndMetadata(offset + 1, "", -1)
+            for (topic, partition), offset in latest.items()
+        }
+        self._consumer.commit(payload)
 
     def close(self) -> None:
         self._consumer.close()
@@ -109,6 +149,8 @@ class BronzeStats:
     written: int = 0
     dlq: int = 0
     batches: int = 0
+    skipped: int = 0
+    checkpoints: int = 0
 
 
 @dataclass
@@ -121,9 +163,11 @@ class BronzeProcessor:
     consumer: EventConsumer | None = None
     batch_size: int = 50
     consumer_group: str = "bronze-processor"
+    checkpoint_store: FileCheckpointStore | None = None
     stats: BronzeStats = field(default_factory=BronzeStats)
     _owns_publisher: bool = field(default=False, init=False, repr=False)
     _owns_consumer: bool = field(default=False, init=False, repr=False)
+    _offsets: OffsetMap = field(default_factory=OffsetMap, init=False, repr=False)
 
     def __post_init__(self) -> None:
         self.settings = self.settings or get_settings()
@@ -131,6 +175,10 @@ class BronzeProcessor:
             raise ValueError("batch_size must be >= 1")
         if self.sink is None:
             self.sink = build_bronze_sink(self.settings)
+        if self.checkpoint_store is None:
+            self.checkpoint_store = FileCheckpointStore(self.settings.checkpoint.dir)
+        loaded = self.checkpoint_store.load(self.consumer_group)
+        self._offsets = OffsetMap(committed=dict(loaded.offsets))
 
     def _get_publisher(self) -> EventPublisher:
         if self.publisher is None:
@@ -174,36 +222,63 @@ class BronzeProcessor:
 
     def process_batch(self, values: Iterable[bytes]) -> list[BronzeRecord]:
         """Validate a batch and flush accepted rows to the sink."""
+        records = records_from_values(values)
+        return self.process_consumed(records)
+
+    def process_consumed(self, records: Iterable[ConsumedRecord]) -> list[BronzeRecord]:
+        """Process consumed records, skip committed offsets, then checkpoint."""
+        pending = list(records)
+        fresh = list(iter_unprocessed(pending, self._offsets))
+        self.stats.skipped += len(pending) - len(fresh)
         accepted: list[BronzeRecord] = []
-        for value in values:
-            record = self.process_value(value)
-            if record is not None:
-                accepted.append(record)
+        for record in fresh:
+            row = self.process_value(record.value)
+            if row is not None:
+                accepted.append(row)
         if accepted:
             assert self.sink is not None
             self.sink.write(accepted)
             self.stats.written += len(accepted)
             self.stats.batches += 1
+        if fresh:
+            self._commit_batch(fresh)
         return accepted
 
     def run(self, max_records: int | None = None) -> BronzeStats:
         """Consume from raw-ticks until ``max_records`` or the consumer idles."""
-        pending: list[bytes] = []
+        pending: list[ConsumedRecord] = []
         seen = 0
         try:
-            for _key, value in self._get_consumer().poll():
-                pending.append(value)
+            for record in self._get_consumer().poll():
+                pending.append(record)
                 seen += 1
                 if len(pending) >= self.batch_size:
-                    self.process_batch(pending)
+                    self.process_consumed(pending)
                     pending.clear()
                 if max_records is not None and seen >= max_records:
                     break
             if pending:
-                self.process_batch(pending)
+                self.process_consumed(pending)
         finally:
             self.close()
         return self.stats
+
+    def _commit_batch(self, records: list[ConsumedRecord]) -> None:
+        self._offsets.advance(records)
+        assert self.checkpoint_store is not None
+        self.checkpoint_store.save(
+            ProcessorCheckpoint(
+                consumer_group=self.consumer_group,
+                offsets=dict(self._offsets.committed),
+            )
+        )
+        self.stats.checkpoints += 1
+        consumer = self.consumer
+        if consumer is not None:
+            try:
+                consumer.commit_offsets(records)
+            except Exception:  # noqa: BLE001
+                logger.debug("broker offset commit failed", exc_info=True)
 
     def _to_dlq(self, raw: Any, error: str) -> None:
         assert self.settings is not None

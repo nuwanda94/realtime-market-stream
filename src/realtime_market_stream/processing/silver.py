@@ -7,6 +7,9 @@ under a partitioned Silver layout (symbol + date).
 
 The lakehouse write is abstracted behind :class:`SilverSink`. ``build_silver_sink``
 selects JSONL, Delta, or Iceberg from ``LAKEHOUSE_FORMAT``.
+
+Dedup cache, prev-close, and open windows are checkpointed with Kafka
+offsets so a restart does not emit duplicate Silver rows.
 """
 
 from __future__ import annotations
@@ -29,6 +32,14 @@ from realtime_market_stream.ingestion.service import (
     parse_market_event,
 )
 from realtime_market_stream.processing.bronze import EventConsumer, KafkaEventConsumer, decode_payload
+from realtime_market_stream.processing.checkpoint import (
+    ConsumedRecord,
+    FileCheckpointStore,
+    OffsetMap,
+    ProcessorCheckpoint,
+    iter_unprocessed,
+    records_from_values,
+)
 from realtime_market_stream.schemas.ticks import OhlcvBar, Side, TradeTick
 from realtime_market_stream.sinks.delta import build_silver_sink
 from realtime_market_stream.sinks.silver import SilverRecord, SilverSink
@@ -124,6 +135,39 @@ class WindowAccumulator:
         payload["imbalance"] = _imbalance(self.buy_volume, self.sell_volume)
         return payload
 
+    def to_state(self) -> dict[str, Any]:
+        return {
+            "symbol": self.symbol,
+            "window_start": self.window_start.isoformat(),
+            "window_end": self.window_end.isoformat(),
+            "open": self.open,
+            "high": self.high,
+            "low": self.low,
+            "close": self.close,
+            "volume": self.volume,
+            "trade_count": self.trade_count,
+            "notional": self.notional,
+            "buy_volume": self.buy_volume,
+            "sell_volume": self.sell_volume,
+        }
+
+    @classmethod
+    def from_state(cls, raw: dict[str, Any]) -> WindowAccumulator:
+        return cls(
+            symbol=str(raw["symbol"]),
+            window_start=datetime.fromisoformat(str(raw["window_start"])),
+            window_end=datetime.fromisoformat(str(raw["window_end"])),
+            open=float(raw["open"]),
+            high=float(raw["high"]),
+            low=float(raw["low"]),
+            close=float(raw["close"]),
+            volume=int(raw["volume"]),
+            trade_count=int(raw["trade_count"]),
+            notional=float(raw["notional"]),
+            buy_volume=int(raw["buy_volume"]),
+            sell_volume=int(raw["sell_volume"]),
+        )
+
 
 def _imbalance(buy: int, sell: int) -> float:
     total = buy + sell
@@ -173,6 +217,8 @@ class SilverStats:
     published: int = 0
     written: int = 0
     dlq: int = 0
+    skipped: int = 0
+    checkpoints: int = 0
 
 
 class DedupCache:
@@ -194,6 +240,13 @@ class DedupCache:
             self._seen.discard(evicted)
         return False
 
+    def snapshot(self) -> list[str]:
+        return list(self._order)
+
+    def restore(self, tick_ids: Iterable[str]) -> None:
+        for tick_id in tick_ids:
+            self.seen(tick_id)
+
 
 @dataclass
 class SilverProcessor:
@@ -206,12 +259,14 @@ class SilverProcessor:
     window_seconds: int = DEFAULT_WINDOW_SECONDS
     seen_cap: int = DEFAULT_SEEN_CAP
     consumer_group: str = "silver-processor"
+    checkpoint_store: FileCheckpointStore | None = None
     stats: SilverStats = field(default_factory=SilverStats)
     _owns_publisher: bool = field(default=False, init=False, repr=False)
     _owns_consumer: bool = field(default=False, init=False, repr=False)
     _windows: dict[str, WindowAccumulator] = field(default_factory=dict, init=False, repr=False)
     _prev_close: dict[str, float] = field(default_factory=dict, init=False, repr=False)
     _dedup: DedupCache = field(init=False, repr=False)
+    _offsets: OffsetMap = field(default_factory=OffsetMap, init=False, repr=False)
 
     def __post_init__(self) -> None:
         self.settings = self.settings or get_settings()
@@ -220,6 +275,9 @@ class SilverProcessor:
         self._dedup = DedupCache(max_size=self.seen_cap)
         if self.sink is None:
             self.sink = build_silver_sink(self.settings)
+        if self.checkpoint_store is None:
+            self.checkpoint_store = FileCheckpointStore(self.settings.checkpoint.dir)
+        self._restore_checkpoint()
 
     def _window(self) -> timedelta:
         return timedelta(seconds=self.window_seconds)
@@ -265,13 +323,23 @@ class SilverProcessor:
     def process_batch(
         self, values: Iterable[bytes], *, flush_open: bool = False
     ) -> list[SilverRecord]:
+        return self.process_consumed(records_from_values(values), flush_open=flush_open)
+
+    def process_consumed(
+        self, records: Iterable[ConsumedRecord], *, flush_open: bool = False
+    ) -> list[SilverRecord]:
+        pending = list(records)
+        fresh = list(iter_unprocessed(pending, self._offsets))
+        self.stats.skipped += len(pending) - len(fresh)
         emitted: list[SilverRecord] = []
-        for value in values:
-            emitted.extend(self.process_value(value))
+        for record in fresh:
+            emitted.extend(self.process_value(record.value))
         if flush_open:
             emitted.extend(self.flush_open_windows())
         if emitted:
             self._persist(emitted)
+        if fresh or (flush_open and emitted):
+            self._commit_batch(fresh)
         return emitted
 
     def flush_open_windows(self) -> list[SilverRecord]:
@@ -283,16 +351,16 @@ class SilverProcessor:
         return records
 
     def run(self, max_records: int | None = None) -> SilverStats:
-        pending: list[bytes] = []
+        pending: list[ConsumedRecord] = []
         seen = 0
         try:
-            for _key, value in self._get_consumer().poll():
-                pending.append(value)
+            for record in self._get_consumer().poll():
+                pending.append(record)
                 seen += 1
                 if max_records is not None and seen >= max_records:
                     break
             if pending:
-                self.process_batch(pending, flush_open=True)
+                self.process_consumed(pending, flush_open=True)
         finally:
             self.close()
         return self.stats
@@ -376,11 +444,56 @@ class SilverProcessor:
             logger.debug("DLQ publish failed", exc_info=True)
         self.stats.dlq += 1
 
+    def _snapshot_state(self) -> dict[str, Any]:
+        return {
+            "seen_tick_ids": self._dedup.snapshot(),
+            "prev_close": self._prev_close,
+            "windows": [acc.to_state() for acc in self._windows.values()],
+            "window_seconds": self.window_seconds,
+        }
+
+    def _restore_checkpoint(self) -> None:
+        assert self.checkpoint_store is not None
+        loaded = self.checkpoint_store.load(self.consumer_group)
+        self._offsets = OffsetMap(committed=dict(loaded.offsets))
+        state = loaded.state
+        seen = state.get("seen_tick_ids") if isinstance(state.get("seen_tick_ids"), list) else []
+        self._dedup.restore(str(item) for item in seen)
+        prev = state.get("prev_close") if isinstance(state.get("prev_close"), dict) else {}
+        self._prev_close = {str(k): float(v) for k, v in prev.items()}
+        windows = state.get("windows") if isinstance(state.get("windows"), list) else []
+        restored: dict[str, WindowAccumulator] = {}
+        for item in windows:
+            if not isinstance(item, dict):
+                continue
+            acc = WindowAccumulator.from_state(item)
+            restored[acc.symbol] = acc
+        self._windows = restored
+
+    def _commit_batch(self, records: list[ConsumedRecord]) -> None:
+        self._offsets.advance(records)
+        assert self.checkpoint_store is not None
+        self.checkpoint_store.save(
+            ProcessorCheckpoint(
+                consumer_group=self.consumer_group,
+                offsets=dict(self._offsets.committed),
+                state=self._snapshot_state(),
+            )
+        )
+        self.stats.checkpoints += 1
+        consumer = self.consumer
+        if consumer is not None:
+            try:
+                consumer.commit_offsets(records)
+            except Exception:  # noqa: BLE001
+                logger.debug("broker offset commit failed", exc_info=True)
+
     def close(self) -> None:
         leftover = self.flush_open_windows()
         if leftover:
             try:
                 self._persist(leftover)
+                self._commit_batch([])
             except Exception:  # noqa: BLE001
                 logger.debug("final silver flush failed", exc_info=True)
         if self.publisher is not None and self._owns_publisher:
