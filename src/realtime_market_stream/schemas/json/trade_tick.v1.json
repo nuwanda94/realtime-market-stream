@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realtime-market-stream.local/schemas/trade-tick/v1",
+  "title": "trade-tick",
+  "x-subject": "trade-tick",
+  "x-version": 1,
+  "type": "object",
+  "required": ["tick_id", "symbol", "ts", "price", "size", "side", "venue", "sequence"],
+  "properties": {
+    "tick_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this print."
+    },
+    "symbol": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Ticker symbol, stored uppercase."
+    },
+    "ts": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Event timestamp in UTC."
+    },
+    "price": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "size": {
+      "type": "integer",
+      "exclusiveMinimum": 0
+    },
+    "side": {
+      "type": "string",
+      "enum": ["buy", "sell"]
+    },
+    "venue": {
+      "type": "string",
+      "default": "SYNTH"
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "event_type": {
+      "type": "string",
+      "const": "trade"
+    }
+  },
+  "additionalProperties": true
+}

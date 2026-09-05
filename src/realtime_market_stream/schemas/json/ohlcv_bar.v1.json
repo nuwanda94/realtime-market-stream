@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realtime-market-stream.local/schemas/ohlcv-bar/v1",
+  "title": "ohlcv-bar",
+  "x-subject": "ohlcv-bar",
+  "x-version": 1,
+  "type": "object",
+  "required": [
+    "symbol",
+    "window_start",
+    "window_end",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume",
+    "trade_count",
+    "vwap"
+  ],
+  "properties": {
+    "symbol": {
+      "type": "string",
+      "minLength": 1
+    },
+    "window_start": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "window_end": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "open": { "type": "number", "exclusiveMinimum": 0 },
+    "high": { "type": "number", "exclusiveMinimum": 0 },
+    "low": { "type": "number", "exclusiveMinimum": 0 },
+    "close": { "type": "number", "exclusiveMinimum": 0 },
+    "volume": { "type": "integer", "minimum": 0 },
+    "trade_count": { "type": "integer", "minimum": 0 },
+    "vwap": { "type": "number", "exclusiveMinimum": 0 },
+    "event_type": {
+      "type": "string",
+      "const": "ohlcv"
+    }
+  },
+  "additionalProperties": true
+}
