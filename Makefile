@@ -4,7 +4,7 @@
 PYTHON ?= python3
 UV := $(shell command -v uv 2>/dev/null)
 
-.PHONY: help install install-dev lint format typecheck test pre-commit-install pre-commit clean compose-up compose-down generate-ticks create-topics ci
+.PHONY: help install install-dev lint format typecheck test pre-commit-install pre-commit clean compose-up compose-down generate-ticks create-topics ingest ci
 
 help:
 	@echo "realtime-market-stream targets:"
@@ -16,6 +16,7 @@ help:
 	@echo "  make test                Run pytest"
 	@echo "  make ci                  Run the same checks CI runs (lint + format check + mypy + test)"
 	@echo "  make generate-ticks      Print synthetic ticks as JSONL (COUNT=10 SYMBOLS=AAPL,MSFT)"
+	@echo "  make ingest              Publish ticks to Redpanda (COUNT=20 SOURCE=synthetic)"
 	@echo "  make create-topics       Idempotently create Redpanda topics (DRY_RUN=1 to preview)"
 	@echo "  make pre-commit-install  Install git hooks (pre-commit + pre-push)"
 	@echo "  make pre-commit          Run all pre-commit hooks on all files"
@@ -59,9 +60,14 @@ COUNT ?= 10
 SYMBOLS ?=
 RATE ?=
 DRY_RUN ?=
+SOURCE ?= synthetic
+WS_URL ?=
 
 generate-ticks:
 	$(PYTHON) scripts/generate_ticks.py --count $(COUNT) $(if $(SYMBOLS),--symbols $(SYMBOLS),) $(if $(RATE),--rate $(RATE),)
+
+ingest:
+	$(PYTHON) scripts/run_ingestion.py --source $(SOURCE) --count $(COUNT) $(if $(WS_URL),--ws-url $(WS_URL),)
 
 create-topics:
 	$(PYTHON) scripts/create_topics.py $(if $(DRY_RUN),--dry-run,)

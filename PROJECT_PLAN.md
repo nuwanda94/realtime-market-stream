@@ -22,7 +22,7 @@ Progress is tracked in `TASKS.md`.
 
 ## Phase 1 – Core Streaming Pipeline (v0.2-core-stream)
 
-- [ ] **feat**: Ingestion service (websocket client + synthetic fallback, schema validation)
+- [x] **feat**: Ingestion service (websocket client + synthetic fallback, schema validation) — 2026-09-05
 - [ ] **feat**: Stream processor Bronze (deserialize, schema enforce, write raw to Delta/Iceberg on MinIO)
 - [ ] **feat**: Stream processor Silver (windowed OHLC, volume, dedup, enrichment)
 - [ ] **feat**: Delta / Iceberg sink with partitioning (symbol + date)

@@ -16,7 +16,7 @@ Use Conventional Commits (`feat:`, `chore:`, `fix:`) when implementing items.
 - [x] chore: Topic creation script / auto-create Kafka topics — done 2026-09-05 (`scripts/create_topics.py`, `src/realtime_market_stream/ingestion/topics.py`, Compose `redpanda-init`)
 
 ### Phase 1 – Core Streaming Pipeline
-- [ ] feat: Ingestion service
+- [x] feat: Ingestion service — done 2026-09-05 (`src/realtime_market_stream/ingestion/service.py`, websocket + synthetic fallback, schema validation, DLQ)
 - [ ] feat: Stream processor Bronze
 - [ ] feat: Stream processor Silver
 - [ ] feat: Delta / Iceberg sink
