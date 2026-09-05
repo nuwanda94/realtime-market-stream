@@ -6,6 +6,7 @@ Built iteratively with Conventional Commits (`feat` / `chore` / `fix`).
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/status-active%20development-blue)](TASKS.md)
+[![CI](https://github.com/nuwanda94/realtime-market-stream/actions/workflows/ci.yml/badge.svg)](https://github.com/nuwanda94/realtime-market-stream/actions/workflows/ci.yml)
 
 ---
 
@@ -72,6 +73,8 @@ See progress and remaining work in:
 
 Phase 0 local infra is available: `docker compose up -d` starts Redpanda, MinIO, Prometheus, Grafana, and Postgres (Airflow metadata).
 
+CI (GitHub Actions) runs ruff, mypy, pytest (3.11 + 3.12), and a package build on every push and pull request to `main`.
+
 ---
 
 ## Tech Stack (locked decisions)
@@ -114,6 +117,7 @@ realtime-market-stream/
 ├── scripts/
 ├── tests/
 ├── docs/
+├── .github/workflows/ci.yml
 ├── docker-compose.yml
 ├── pyproject.toml
 ├── Makefile
