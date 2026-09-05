@@ -4,7 +4,7 @@
 PYTHON ?= python3
 UV := $(shell command -v uv 2>/dev/null)
 
-.PHONY: help install install-dev lint format typecheck test pre-commit-install pre-commit clean compose-up compose-down generate-ticks create-topics ingest bronze silver replay-dlq ci
+.PHONY: help install install-dev lint format typecheck test test-unit test-integration pre-commit-install pre-commit clean compose-up compose-down generate-ticks create-topics ingest bronze silver replay-dlq ci
 
 help:
 	@echo "realtime-market-stream targets:"
@@ -13,7 +13,9 @@ help:
 	@echo "  make lint                Run ruff check"
 	@echo "  make format              Run ruff format"
 	@echo "  make typecheck           Run mypy"
-	@echo "  make test                Run pytest"
+	@echo "  make test                Run pytest (unit + in-process integration)"
+	@echo "  make test-unit           Run tests/unit only"
+	@echo "  make test-integration    Run tests/integration (no live broker)"
 	@echo "  make ci                  Run the same checks CI runs (lint + format check + mypy + test)"
 	@echo "  make generate-ticks      Print synthetic ticks as JSONL (COUNT=10 SYMBOLS=AAPL,MSFT)"
 	@echo "  make ingest              Publish ticks to Redpanda (COUNT=20 SOURCE=synthetic)"
@@ -52,6 +54,12 @@ typecheck:
 
 test:
 	pytest
+
+test-unit:
+	pytest tests/unit
+
+test-integration:
+	pytest tests/integration -m "integration and not broker"
 
 # Mirror GitHub Actions CI jobs locally before pushing.
 ci: lint

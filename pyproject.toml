@@ -101,6 +101,10 @@ minversion = "8.0"
 testpaths = ["tests"]
 pythonpath = ["src"]
 addopts = "-q --strict-markers"
+markers = [
+  "integration: in-process pipeline tests (no broker required)",
+  "broker: optional live Redpanda checks; skipped when unreachable",
+]
 
 [tool.coverage.run]
 source = ["src/realtime_market_stream"]
