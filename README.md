@@ -86,6 +86,7 @@ Phase 0 local infra is available: `docker compose up -d` starts Redpanda, MinIO,
 | Query              | DuckDB / Polars                             |
 | Config             | pydantic-settings                           |
 | Observability      | OpenTelemetry + Prometheus + Grafana        |
+| Tooling            | pyproject.toml + uv/pip, ruff, mypy, pre-commit |
 
 ---
 
@@ -114,6 +115,8 @@ realtime-market-stream/
 ├── tests/
 ├── docs/
 ├── docker-compose.yml
+├── pyproject.toml
+├── Makefile
 ├── PROJECT_PLAN.md
 ├── TASKS.md
 └── .env.example
@@ -125,7 +128,17 @@ realtime-market-stream/
 
 ```bash
 cp .env.example .env
+python3 -m venv .venv && source .venv/bin/activate
+make install-dev
+make test
 docker compose up -d
+```
+
+Developer loop:
+
+```bash
+make lint format typecheck test
+make pre-commit-install   # once per clone
 ```
 
 | URL | Service |
@@ -137,7 +150,7 @@ docker compose up -d
 | localhost:19092 | Redpanda Kafka API |
 | localhost:5432 | Postgres (`airflow` / `airflow`) |
 
-See [infra/docker/README.md](infra/docker/README.md) for details. Application `make` targets land in the tooling task.
+See [infra/docker/README.md](infra/docker/README.md) for details.
 
 ---
 

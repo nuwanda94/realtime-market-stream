@@ -9,7 +9,7 @@ Use Conventional Commits (`feat:`, `chore:`, `fix:`) when implementing items.
 ### Phase 0 – Foundation & Scaffolding
 - [x] chore: Initialize repository structure, MIT license, .gitignore, basic README, folder layout
 - [x] chore: Docker Compose base (Redpanda, MinIO, Prometheus, Grafana, Postgres for Airflow) — done 2026-09-05 (`docker-compose.yml` + infra provisioning)
-- [ ] chore: Project tooling (pyproject.toml / uv or Poetry, pre-commit, ruff, mypy, Makefile)
+- [x] chore: Project tooling (pyproject.toml / uv or Poetry, pre-commit, ruff, mypy, Makefile) — done 2026-09-05 (`pyproject.toml`, `.pre-commit-config.yaml`, `Makefile`)
 - [ ] chore: CI skeleton (GitHub Actions: lint, test, build)
 - [ ] chore: Config management (pydantic-settings, local vs Snowflake profiles)
 - [ ] feat: Synthetic tick generator (realistic OHLCV + trade ticks, configurable rate)
