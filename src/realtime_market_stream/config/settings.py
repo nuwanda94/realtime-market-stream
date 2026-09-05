@@ -26,6 +26,14 @@ class AppEnv(StrEnum):
     SNOWFLAKE = "snowflake"
 
 
+class LakehouseFormat(StrEnum):
+    """On-disk table format for Bronze/Silver/Gold."""
+
+    JSONL = "jsonl"
+    DELTA = "delta"
+    ICEBERG = "iceberg"
+
+
 class KafkaSettings(BaseSettings):
     """Redpanda / Kafka connection and topic names."""
 
@@ -50,6 +58,34 @@ class MinioSettings(BaseSettings):
     access_key: str = Field(default="minioadmin")
     secret_key: SecretStr = Field(default=SecretStr("minioadmin"))
     bucket: str = Field(default="market-lake")
+
+
+class LakehouseSettings(BaseSettings):
+    """Medallion lakehouse writer settings.
+
+    ``format=jsonl`` is the zero-dependency default used by tests and CI.
+    Set ``LAKEHOUSE_FORMAT=delta`` (or ``iceberg``) after installing
+    ``pip install -e '.[lakehouse]'``. Partitioning is always
+    ``symbol`` + ``date``.
+    """
+
+    model_config = SettingsConfigDict(env_prefix="LAKEHOUSE_", extra="ignore")
+
+    format: LakehouseFormat = Field(default=LakehouseFormat.JSONL)
+    uri: str = Field(
+        default="",
+        description=(
+            "Table root. Empty uses data/{MINIO_BUCKET}. "
+            "Use s3://market-lake to write through MinIO with the Delta engine."
+        ),
+    )
+
+    @field_validator("format", mode="before")
+    @classmethod
+    def _lower_format(cls, value: object) -> object:
+        if isinstance(value, str):
+            return value.strip().lower()
+        return value
 
 
 class SnowflakeSettings(BaseSettings):
@@ -86,7 +122,6 @@ class GeneratorSettings(BaseSettings):
 
     model_config = SettingsConfigDict(extra="ignore")
 
-    # NoDecode: env values are CSV strings (TICK_SYMBOLS=AAPL,MSFT), not JSON arrays.
     tick_symbols: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: ["AAPL", "MSFT", "GOOG", "AMZN", "NVDA"]
     )
@@ -104,7 +139,7 @@ class Settings(BaseSettings):
     """Root settings object.
 
     Nested sections are populated from the same env / `.env` file using their
-    prefixes (`KAFKA_`, `MINIO_`, `SNOWFLAKE_`).
+    prefixes (`KAFKA_`, `MINIO_`, `SNOWFLAKE_`, `LAKEHOUSE_`).
     """
 
     model_config = SettingsConfigDict(
@@ -119,6 +154,7 @@ class Settings(BaseSettings):
 
     kafka: KafkaSettings = Field(default_factory=KafkaSettings)
     minio: MinioSettings = Field(default_factory=MinioSettings)
+    lakehouse: LakehouseSettings = Field(default_factory=LakehouseSettings)
     snowflake: SnowflakeSettings = Field(default_factory=SnowflakeSettings)
     generator: GeneratorSettings = Field(default_factory=GeneratorSettings)
 
