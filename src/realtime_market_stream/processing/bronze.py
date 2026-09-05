@@ -2,13 +2,12 @@
 
 Consumes ``raw-ticks``, validates each payload against the canonical tick
 schemas, and writes accepted records into a partitioned Bronze layout
-(``bronze/ticks/event_type=.../symbol=.../date=...``). Invalid records are
+(``bronze/ticks`` partitioned by symbol + date). Invalid records are
 routed to the DLQ topic.
 
 The lakehouse write is abstracted behind :class:`BronzeSink` so unit tests
-need neither Redpanda nor MinIO. The default filesystem sink is Delta-shaped
-(Hive partitions + JSONL micro-batches) and needs no extra packages. A later
-task can swap in a real Delta/Iceberg writer without changing this processor.
+need neither Redpanda nor MinIO. ``build_bronze_sink`` selects JSONL, Delta,
+or Iceberg from ``LAKEHOUSE_FORMAT``.
 """
 
 from __future__ import annotations
@@ -31,7 +30,8 @@ from realtime_market_stream.ingestion.service import (
     parse_market_event,
 )
 from realtime_market_stream.schemas.ticks import OhlcvBar, TradeTick
-from realtime_market_stream.sinks.bronze import BronzeRecord, BronzeSink, FilesystemBronzeSink
+from realtime_market_stream.sinks.bronze import BronzeRecord, BronzeSink
+from realtime_market_stream.sinks.delta import build_bronze_sink
 
 logger = logging.getLogger(__name__)
 
@@ -130,7 +130,7 @@ class BronzeProcessor:
         if self.batch_size < 1:
             raise ValueError("batch_size must be >= 1")
         if self.sink is None:
-            self.sink = FilesystemBronzeSink.from_settings(self.settings)
+            self.sink = build_bronze_sink(self.settings)
 
     def _get_publisher(self) -> EventPublisher:
         if self.publisher is None:
