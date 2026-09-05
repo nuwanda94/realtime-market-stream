@@ -1,45 +1,148 @@
 # realtime-market-stream
 
-Local-first real-time market data streaming platform → medallion lakehouse (Delta Lake / Iceberg) with optional Snowflake sink.
+**Local-first real-time market data streaming platform** that lands ticks into a medallion lakehouse (Bronze → Silver → Gold) with an optional Snowflake path.
 
-**Status**: Under active automated construction following the plan in `PROJECT_PLAN.md` and tracker in `TASKS.md`.
+Built iteratively with Conventional Commits (`feat` / `chore` / `fix`) via an hourly automation. One task is completed per run.
 
-One task is implemented per hourly automation run using Conventional Commits (`feat` / `chore` / `fix`).
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/status-active%20development-blue)](TASKS.md)
 
-## Quick links
-- [Project Plan](PROJECT_PLAN.md)
-- [Task Tracker](TASKS.md)
+---
 
-## Vision
-Ingest live or synthetic market ticks → Redpanda → stream processing (Quix Streams / Bytewax) → Bronze / Silver / Gold tables on MinIO (Delta) → FastAPI + Streamlit dashboard. Optional dual-write to Snowflake. Fully local, zero cloud cost for the core path.
+## Objectives
 
-## Repository layout
+1. **Demonstrate production-grade real-time streaming patterns**  
+   End-to-end pipeline from live/synthetic market ticks through messaging, stream processing, and medallion storage — fully runnable on a laptop with zero cloud cost.
+
+2. **Local-first by design**  
+   Core path uses Redpanda + Delta Lake on MinIO + Python stream processors. Cloud services (Snowflake, AWS) are optional dual-write destinations, never required.
+
+3. **Finance-domain relevance**  
+   Realistic market tick data (OHLCV, trades), windowed aggregations, anomaly detection, and serving layer suitable for research, dashboards, or downstream feature stores / RAG systems.
+
+4. **Clean, extensible architecture**  
+   Clear separation of ingestion, processing (Bronze/Silver/Gold), sinks, serving (FastAPI + Streamlit), and observability. Easy to swap stream engines or storage formats.
+
+5. **Portfolio & interview showcase**  
+   Transparent progress via `PROJECT_PLAN.md` + `TASKS.md`, Conventional Commits, good documentation, and a one-command local experience. Complements existing work on lakehouse patterns and finance RAG.
+
+6. **Operational excellence**  
+   Schema enforcement, dead-letter handling, idempotency, data quality checks, metrics/tracing, and Airflow for supporting batch jobs.
+
+---
+
+## High-level Architecture
+
+```
+Live / Synthetic Market Ticks
+          │
+          ▼
+   Ingestion (Python)
+          │
+          ▼
+     Redpanda / Kafka
+   (raw-ticks, enriched, alerts, dlq)
+          │
+          ▼
+ Stream Processing (Quix Streams / Bytewax / PyFlink)
+   • Bronze  – raw, schema-validated
+   • Silver  – cleaned, windowed OHLC, enriched
+   • Gold    – features, anomaly scores
+          │
+          ▼
+ ┌─────────────────────┬──────────────────────┐
+ │  Local Lakehouse    │  Optional Cloud      │
+ │  Delta Lake /       │  Snowflake           │
+ │  Iceberg on MinIO   │  (Snowpipe Streaming)│
+ └─────────────────────┴──────────────────────┘
+          │
+          ▼
+ FastAPI  +  Streamlit Dashboard  +  DuckDB/Polars queries
+```
+
+---
+
+## Current Status
+
+Under active automated construction.  
+See progress and remaining work in:
+
+- [Project Plan](PROJECT_PLAN.md) – full phased roadmap
+- [Task Tracker](TASKS.md) – single-item checklist used by the hourly automation
+
+---
+
+## Tech Stack (locked decisions)
+
+| Layer              | Choice                                      |
+|--------------------|---------------------------------------------|
+| Messaging          | Redpanda (Kafka-compatible)                 |
+| Stream processing  | Quix Streams or Bytewax (Python-first)      |
+| Table format       | Delta Lake on MinIO (Iceberg alternative)   |
+| Orchestration      | Airflow                                     |
+| Serving            | FastAPI + Streamlit                         |
+| Query              | DuckDB / Polars                             |
+| Config             | pydantic-settings                           |
+| Observability      | OpenTelemetry + Prometheus + Grafana        |
+
+---
+
+## Repository Layout
 
 ```
 realtime-market-stream/
-├── src/realtime_market_stream/   # application package
-│   ├── config/                   # pydantic-settings (later)
-│   ├── ingestion/                # websocket + synthetic producer
-│   ├── processing/               # bronze / silver / gold stream jobs
-│   ├── sinks/                    # Delta / Iceberg / Snowflake writers
-│   ├── serving/                  # FastAPI + query layer
-│   ├── schemas/                  # tick / OHLC / alert models
-│   └── observability/            # metrics, tracing helpers
+├── src/realtime_market_stream/     # application package
+│   ├── config/
+│   ├── ingestion/
+│   ├── processing/
+│   ├── sinks/
+│   ├── serving/
+│   ├── schemas/
+│   └── observability/
 ├── apps/
-│   ├── dashboard/                # Streamlit UI
-│   └── api/                      # FastAPI entrypoint wrapper
+│   ├── dashboard/                  # Streamlit
+│   └── api/                        # FastAPI entrypoint
 ├── infra/
-│   ├── docker/                   # compose + service Dockerfiles
+│   ├── docker/
 │   ├── grafana/
 │   ├── prometheus/
 │   └── redpanda/
 ├── airflow/dags/
-├── scripts/                      # topics, replay, backfill
+├── scripts/
 ├── tests/
 ├── docs/
+├── PROJECT_PLAN.md
+├── TASKS.md
 └── .env.example
 ```
 
-Copy `.env.example` to `.env` before running local services. Do not commit real credentials.
+---
 
-Built by Karan Verma (@nuwanda94) – Data Engineer @ Morningstar.
+## Quick Start (once scaffolding is complete)
+
+```bash
+cp .env.example .env
+make up          # starts Redpanda, MinIO, etc.
+make produce     # synthetic ticks
+make dashboard   # open Streamlit
+```
+
+Detailed instructions will appear here as the corresponding tasks are completed.
+
+---
+
+## Author
+
+**Karan Verma** ([@nuwanda94](https://github.com/nuwanda94))  
+Data Engineer @ Morningstar  
+Snowflake • AWS • Airflow • Python • SQL
+
+Related work:
+- [data-lakehouse-ministack](https://github.com/nuwanda94/data-lakehouse-ministack) – local medallion lakehouse
+- [fintruth-rag](https://github.com/nuwanda94/fintruth-rag) – SEC-grounded financial research assistant
+
+---
+
+## License
+
+MIT – see [LICENSE](LICENSE).
