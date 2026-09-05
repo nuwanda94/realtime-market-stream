@@ -47,6 +47,18 @@ class OffsetCommitter(Protocol):
     def commit_offsets(self, records: list[ConsumedRecord]) -> None: ...
 
 
+def coerce_consumed(item: ConsumedRecord | tuple[Any, ...]) -> ConsumedRecord:
+    """Accept ``ConsumedRecord`` or legacy ``(key, value)`` tuples from fakes."""
+    if isinstance(item, ConsumedRecord):
+        return item
+    if isinstance(item, tuple) and len(item) >= 2:
+        raw_key, raw_value = item[0], item[1]
+        key = raw_key if isinstance(raw_key, (bytes, type(None))) else None
+        value = raw_value if isinstance(raw_value, bytes) else b""
+        return ConsumedRecord(key=key, value=value)
+    raise TypeError(f"unsupported consumed item: {type(item)!r}")
+
+
 @dataclass
 class OffsetMap:
     """Highest *committed* offset per ``topic:partition``."""
