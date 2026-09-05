@@ -12,7 +12,7 @@ Use Conventional Commits (`feat:`, `chore:`, `fix:`) when implementing items.
 - [x] chore: Project tooling (pyproject.toml / uv or Poetry, pre-commit, ruff, mypy, Makefile) — done 2026-09-05 (`pyproject.toml`, `.pre-commit-config.yaml`, `Makefile`)
 - [x] chore: CI skeleton (GitHub Actions: lint, test, build) — done 2026-09-05 (`.github/workflows/ci.yml`)
 - [x] chore: Config management (pydantic-settings, local vs Snowflake profiles) — done 2026-09-05 (`src/realtime_market_stream/config/settings.py`)
-- [ ] feat: Synthetic tick generator (realistic OHLCV + trade ticks, configurable rate)
+- [x] feat: Synthetic tick generator (realistic OHLCV + trade ticks, configurable rate) — done 2026-09-05 (`src/realtime_market_stream/ingestion/generator.py`)
 - [ ] chore: Topic creation script / auto-create Kafka topics
 
 ### Phase 1 – Core Streaming Pipeline
