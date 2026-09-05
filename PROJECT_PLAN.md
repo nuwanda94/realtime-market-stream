@@ -27,7 +27,7 @@ Progress is tracked in `TASKS.md`.
 - [x] **feat**: Stream processor Silver (windowed OHLC, volume, dedup, enrichment) — 2026-09-05
 - [x] **feat**: Delta / Iceberg sink with partitioning (symbol + date) — 2026-09-05 (`sinks/delta.py`)
 - [x] **chore**: Schema registry / JSON Schema support — 2026-09-06 (`schemas/registry.py`, bundled JSON Schema v1)
-- [ ] **feat**: Dead-letter queue handling + replay tool
+- [x] **feat**: Dead-letter queue handling + replay tool — 2026-09-06 (`processing/dlq.py`, `scripts/run_dlq.py`)
 - [ ] **fix**: Idempotency & exactly-once (checkpointing)
 - [ ] **chore**: Unit + integration tests (Testcontainers / local Redpanda)
 

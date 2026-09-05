@@ -4,7 +4,7 @@
 PYTHON ?= python3
 UV := $(shell command -v uv 2>/dev/null)
 
-.PHONY: help install install-dev lint format typecheck test pre-commit-install pre-commit clean compose-up compose-down generate-ticks create-topics ingest bronze silver ci
+.PHONY: help install install-dev lint format typecheck test pre-commit-install pre-commit clean compose-up compose-down generate-ticks create-topics ingest bronze silver replay-dlq ci
 
 help:
 	@echo "realtime-market-stream targets:"
@@ -19,6 +19,7 @@ help:
 	@echo "  make ingest              Publish ticks to Redpanda (COUNT=20 SOURCE=synthetic)"
 	@echo "  make bronze              Land raw-ticks into Bronze (MAX_RECORDS=20 BATCH_SIZE=10)"
 	@echo "  make silver              Dedup/enrich/window into Silver (MAX_RECORDS=20 WINDOW_SECONDS=60)"
+	@echo "  make replay-dlq          Replay DLQ onto raw-ticks (MAX_RECORDS=20 DRY_RUN=1 INSPECT=1)"
 	@echo "  make create-topics       Idempotently create Redpanda topics (DRY_RUN=1 to preview)"
 	@echo "  make pre-commit-install  Install git hooks (pre-commit + pre-push)"
 	@echo "  make pre-commit          Run all pre-commit hooks on all files"
@@ -68,6 +69,8 @@ MAX_RECORDS ?=
 BATCH_SIZE ?= 50
 WINDOW_SECONDS ?= 60
 DATA_ROOT ?=
+INSPECT ?=
+ERROR_CONTAINS ?=
 
 generate-ticks:
 	$(PYTHON) scripts/generate_ticks.py --count $(COUNT) $(if $(SYMBOLS),--symbols $(SYMBOLS),) $(if $(RATE),--rate $(RATE),)
@@ -80,6 +83,9 @@ bronze:
 
 silver:
 	$(PYTHON) scripts/run_silver.py --window-seconds $(WINDOW_SECONDS) $(if $(MAX_RECORDS),--max-records $(MAX_RECORDS),) $(if $(DATA_ROOT),--data-root $(DATA_ROOT),)
+
+replay-dlq:
+	$(PYTHON) scripts/run_dlq.py $(if $(MAX_RECORDS),--max-records $(MAX_RECORDS),) $(if $(DRY_RUN),--dry-run,) $(if $(INSPECT),--inspect,) $(if $(ERROR_CONTAINS),--error-contains $(ERROR_CONTAINS),)
 
 create-topics:
 	$(PYTHON) scripts/create_topics.py $(if $(DRY_RUN),--dry-run,)

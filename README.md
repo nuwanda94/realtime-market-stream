@@ -84,6 +84,8 @@ After ingesting ticks (`make ingest`), land them in Bronze with `make bronze MAX
 
 Promote into Silver with `make silver MAX_RECORDS=50 WINDOW_SECONDS=60`. The Silver processor deduplicates trades by `tick_id`, adds notional / return-bps / buy-sell imbalance, rolls tumbling OHLCV bars, publishes to `enriched-ticks`, and writes Hive partitions under `data/{MINIO_BUCKET}/silver/ticks/...`.
 
+Inspect or replay the DLQ with `make replay-dlq INSPECT=1 MAX_RECORDS=20` (JSONL dump) or `make replay-dlq MAX_RECORDS=20` to republish payloads that now validate onto `raw-ticks`. Use `DRY_RUN=1` to classify without producing.
+
 CI (GitHub Actions) runs ruff, mypy, pytest (3.11 + 3.12), and a package build on every push and pull request to `main`.
 
 ---

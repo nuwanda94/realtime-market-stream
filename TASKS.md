@@ -21,7 +21,7 @@ Use Conventional Commits (`feat:`, `chore:`, `fix:`) when implementing items.
 - [x] feat: Stream processor Silver — done 2026-09-05 (`src/realtime_market_stream/processing/silver.py`, dedup, enrichment, tumbling OHLC, `enriched-ticks`)
 - [x] feat: Delta / Iceberg sink — done 2026-09-05 (`src/realtime_market_stream/sinks/delta.py`, symbol+date partitions, `LAKEHOUSE_FORMAT=delta|iceberg|jsonl`)
 - [x] chore: Schema registry / JSON Schema — done 2026-09-06 (`src/realtime_market_stream/schemas/registry.py`, bundled `schemas/json/*.v1.json`, optional `SCHEMA_REGISTRY_URL`)
-- [ ] feat: Dead-letter queue handling + replay tool
+- [x] feat: Dead-letter queue handling + replay tool — done 2026-09-06 (`src/realtime_market_stream/processing/dlq.py`, `scripts/run_dlq.py`, `make replay-dlq`)
 - [ ] fix: Idempotency & exactly-once
 - [ ] chore: Unit + integration tests
 
