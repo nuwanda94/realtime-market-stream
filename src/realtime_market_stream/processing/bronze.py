@@ -37,6 +37,7 @@ from realtime_market_stream.processing.checkpoint import (
     FileCheckpointStore,
     OffsetMap,
     ProcessorCheckpoint,
+    coerce_consumed,
     iter_unprocessed,
     records_from_values,
 )
@@ -52,11 +53,9 @@ MarketEvent = TradeTick | OhlcvBar
 class EventConsumer(Protocol):
     """Minimal consumer so tests can inject a fake."""
 
-    def poll(self) -> Iterator[ConsumedRecord]: ...
+    def poll(self) -> Iterator[ConsumedRecord | tuple[bytes | None, bytes]]: ...
 
     def close(self) -> None: ...
-
-    def commit_offsets(self, records: list[ConsumedRecord]) -> None: ...
 
 
 class KafkaEventConsumer:
@@ -227,7 +226,7 @@ class BronzeProcessor:
 
     def process_consumed(self, records: Iterable[ConsumedRecord]) -> list[BronzeRecord]:
         """Process consumed records, skip committed offsets, then checkpoint."""
-        pending = list(records)
+        pending = [coerce_consumed(record) for record in records]
         fresh = list(iter_unprocessed(pending, self._offsets))
         self.stats.skipped += len(pending) - len(fresh)
         accepted: list[BronzeRecord] = []
@@ -249,8 +248,8 @@ class BronzeProcessor:
         pending: list[ConsumedRecord] = []
         seen = 0
         try:
-            for record in self._get_consumer().poll():
-                pending.append(record)
+            for item in self._get_consumer().poll():
+                pending.append(coerce_consumed(item))
                 seen += 1
                 if len(pending) >= self.batch_size:
                     self.process_consumed(pending)
@@ -274,9 +273,10 @@ class BronzeProcessor:
         )
         self.stats.checkpoints += 1
         consumer = self.consumer
-        if consumer is not None:
+        commit = getattr(consumer, "commit_offsets", None) if consumer is not None else None
+        if callable(commit):
             try:
-                consumer.commit_offsets(records)
+                commit(records)
             except Exception:  # noqa: BLE001
                 logger.debug("broker offset commit failed", exc_info=True)
 
