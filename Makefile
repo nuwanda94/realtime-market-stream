@@ -4,7 +4,7 @@
 PYTHON ?= python3
 UV := $(shell command -v uv 2>/dev/null)
 
-.PHONY: help install install-dev lint format typecheck test pre-commit-install pre-commit clean compose-up compose-down generate-ticks create-topics ingest bronze ci
+.PHONY: help install install-dev lint format typecheck test pre-commit-install pre-commit clean compose-up compose-down generate-ticks create-topics ingest bronze silver ci
 
 help:
 	@echo "realtime-market-stream targets:"
@@ -18,6 +18,7 @@ help:
 	@echo "  make generate-ticks      Print synthetic ticks as JSONL (COUNT=10 SYMBOLS=AAPL,MSFT)"
 	@echo "  make ingest              Publish ticks to Redpanda (COUNT=20 SOURCE=synthetic)"
 	@echo "  make bronze              Land raw-ticks into Bronze (MAX_RECORDS=20 BATCH_SIZE=10)"
+	@echo "  make silver              Dedup/enrich/window into Silver (MAX_RECORDS=20 WINDOW_SECONDS=60)"
 	@echo "  make create-topics       Idempotently create Redpanda topics (DRY_RUN=1 to preview)"
 	@echo "  make pre-commit-install  Install git hooks (pre-commit + pre-push)"
 	@echo "  make pre-commit          Run all pre-commit hooks on all files"
@@ -65,6 +66,7 @@ SOURCE ?= synthetic
 WS_URL ?=
 MAX_RECORDS ?=
 BATCH_SIZE ?= 50
+WINDOW_SECONDS ?= 60
 DATA_ROOT ?=
 
 generate-ticks:
@@ -75,6 +77,9 @@ ingest:
 
 bronze:
 	$(PYTHON) scripts/run_bronze.py --batch-size $(BATCH_SIZE) $(if $(MAX_RECORDS),--max-records $(MAX_RECORDS),) $(if $(DATA_ROOT),--data-root $(DATA_ROOT),)
+
+silver:
+	$(PYTHON) scripts/run_silver.py --window-seconds $(WINDOW_SECONDS) $(if $(MAX_RECORDS),--max-records $(MAX_RECORDS),) $(if $(DATA_ROOT),--data-root $(DATA_ROOT),)
 
 create-topics:
 	$(PYTHON) scripts/create_topics.py $(if $(DRY_RUN),--dry-run,)

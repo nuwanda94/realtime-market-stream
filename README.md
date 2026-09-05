@@ -82,6 +82,8 @@ Load settings in code with `from realtime_market_stream.config import get_settin
 
 After ingesting ticks (`make ingest`), land them in Bronze with `make bronze MAX_RECORDS=50`. Records are schema-validated and written under `data/{MINIO_BUCKET}/bronze/ticks/event_type=.../symbol=.../date=.../` (JSONL micro-batches; dedicated Delta writer is a later task). Invalid payloads go to the `dlq` topic.
 
+Promote into Silver with `make silver MAX_RECORDS=50 WINDOW_SECONDS=60`. The Silver processor deduplicates trades by `tick_id`, adds notional / return-bps / buy-sell imbalance, rolls tumbling OHLCV bars, publishes to `enriched-ticks`, and writes Hive partitions under `data/{MINIO_BUCKET}/silver/ticks/...`.
+
 CI (GitHub Actions) runs ruff, mypy, pytest (3.11 + 3.12), and a package build on every push and pull request to `main`.
 
 ---

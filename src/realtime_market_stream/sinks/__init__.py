@@ -6,5 +6,20 @@ from realtime_market_stream.sinks.bronze import (
     FilesystemBronzeSink,
     InMemoryBronzeSink,
 )
+from realtime_market_stream.sinks.silver import (
+    FilesystemSilverSink,
+    InMemorySilverSink,
+    SilverRecord,
+    SilverSink,
+)
 
-__all__ = ["BronzeRecord", "BronzeSink", "FilesystemBronzeSink", "InMemoryBronzeSink"]
+__all__ = [
+    "BronzeRecord",
+    "BronzeSink",
+    "FilesystemBronzeSink",
+    "FilesystemSilverSink",
+    "InMemoryBronzeSink",
+    "InMemorySilverSink",
+    "SilverRecord",
+    "SilverSink",
+]

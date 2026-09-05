@@ -18,7 +18,7 @@ Use Conventional Commits (`feat:`, `chore:`, `fix:`) when implementing items.
 ### Phase 1 – Core Streaming Pipeline
 - [x] feat: Ingestion service — done 2026-09-05 (`src/realtime_market_stream/ingestion/service.py`, websocket + synthetic fallback, schema validation, DLQ)
 - [x] feat: Stream processor Bronze — done 2026-09-05 (`src/realtime_market_stream/processing/bronze.py`, partitioned sink, DLQ on schema failure)
-- [ ] feat: Stream processor Silver
+- [x] feat: Stream processor Silver — done 2026-09-05 (`src/realtime_market_stream/processing/silver.py`, dedup, enrichment, tumbling OHLC, `enriched-ticks`)
 - [ ] feat: Delta / Iceberg sink
 - [ ] chore: Schema registry / JSON Schema
 - [ ] feat: Dead-letter queue handling + replay tool
