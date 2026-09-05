@@ -4,7 +4,7 @@
 PYTHON ?= python3
 UV := $(shell command -v uv 2>/dev/null)
 
-.PHONY: help install install-dev lint format typecheck test pre-commit-install pre-commit clean compose-up compose-down
+.PHONY: help install install-dev lint format typecheck test pre-commit-install pre-commit clean compose-up compose-down generate-ticks
 
 help:
 	@echo "realtime-market-stream targets:"
@@ -14,6 +14,7 @@ help:
 	@echo "  make format              Run ruff format"
 	@echo "  make typecheck           Run mypy"
 	@echo "  make test                Run pytest"
+	@echo "  make generate-ticks      Print synthetic ticks as JSONL (COUNT=10 SYMBOLS=AAPL,MSFT)"
 	@echo "  make pre-commit-install  Install git hooks"
 	@echo "  make pre-commit          Run all pre-commit hooks"
 	@echo "  make compose-up          Start local infra (Redpanda, MinIO, ...)"
@@ -45,6 +46,13 @@ typecheck:
 
 test:
 	pytest
+
+COUNT ?= 10
+SYMBOLS ?=
+RATE ?=
+
+generate-ticks:
+	$(PYTHON) scripts/generate_ticks.py --count $(COUNT) $(if $(SYMBOLS),--symbols $(SYMBOLS),) $(if $(RATE),--rate $(RATE),)
 
 pre-commit-install:
 	pre-commit install
