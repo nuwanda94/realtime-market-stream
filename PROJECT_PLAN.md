@@ -1,0 +1,71 @@
+# Real-time Market Data Streaming Platform – Project Plan
+
+**Repo**: https://github.com/nuwanda94/realtime-market-stream  
+**Owner**: Karan Verma (@nuwanda94)  
+**Goal**: Local-first real-time market data pipeline (synthetic + live ticks) → Redpanda/Kafka → stream processing → medallion lakehouse (Bronze/Silver/Gold on Delta/Iceberg) with optional Snowflake sink, FastAPI + live dashboard, Airflow orchestration, full observability.
+
+**Conventions**: feat / chore / fix (Conventional Commits). One item implemented per automation run.
+
+**State tracking**: Update the checkbox and status in `TASKS.md` after each successful implementation. Never implement more than **one** task per run.
+
+---
+
+## Phase 0 – Foundation & Scaffolding (v0.1-scaffold)
+
+- [ ] **chore**: Initialize repository structure, MIT license, .gitignore, basic README, folder layout
+- [ ] **chore**: Docker Compose base (Redpanda, MinIO, Prometheus, Grafana, Postgres for Airflow)
+- [ ] **chore**: Project tooling (pyproject.toml / uv or Poetry, pre-commit, ruff, mypy, Makefile)
+- [ ] **chore**: CI skeleton (GitHub Actions: lint, test, build)
+- [ ] **chore**: Config management (pydantic-settings, local vs Snowflake profiles)
+- [ ] **feat**: Synthetic tick generator (realistic OHLCV + trade ticks, configurable rate)
+- [ ] **chore**: Topic creation script / auto-create Kafka topics (raw-ticks, enriched-ticks, alerts, dlq)
+
+## Phase 1 – Core Streaming Pipeline (v0.2-core-stream)
+
+- [ ] **feat**: Ingestion service (websocket client + synthetic fallback, schema validation)
+- [ ] **feat**: Stream processor Bronze (deserialize, schema enforce, write raw to Delta/Iceberg on MinIO)
+- [ ] **feat**: Stream processor Silver (windowed OHLC, volume, dedup, enrichment)
+- [ ] **feat**: Delta / Iceberg sink with partitioning (symbol + date)
+- [ ] **chore**: Schema registry / JSON Schema support
+- [ ] **feat**: Dead-letter queue handling + replay tool
+- [ ] **fix**: Idempotency & exactly-once (checkpointing)
+- [ ] **chore**: Unit + integration tests (Testcontainers / local Redpanda)
+
+## Phase 2 – Gold Layer, Analytics & Serving (v0.3-serving)
+
+- [ ] **feat**: Gold aggregations + anomaly scores (z-score / IQR)
+- [ ] **feat**: FastAPI service (latest ticks, OHLC, anomalies, health, metrics)
+- [ ] **feat**: Live Streamlit dashboard (charts, alerts, latency metrics)
+- [ ] **feat**: Query layer (DuckDB / Polars views over Delta)
+- [ ] **chore**: OpenTelemetry instrumentation
+- [ ] **fix**: Backpressure & rate limiting
+
+## Phase 3 – Snowflake Integration & Production Hardening (v0.4-snowflake)
+
+- [ ] **feat**: Snowflake Streaming sink (Snowpipe Streaming or Kafka connector path)
+- [ ] **feat**: Dual-write mode (local Delta + optional Snowflake)
+- [ ] **chore**: Snowflake setup scripts (tables, stages, pipes, RBAC examples)
+- [ ] **feat**: Airflow DAGs (backfill, DQ checks, schema evolution)
+- [ ] **fix**: Data quality rules (freshness, nulls, volume anomalies)
+- [ ] **chore**: Cost & performance documentation
+
+## Phase 4 – Polish, Docs, Observability & Release (v1.0)
+
+- [ ] **chore**: Architecture docs & diagrams (Mermaid)
+- [ ] **chore**: Excellent README (one-command start, demo notes, architecture)
+- [ ] **feat**: Replay & backfill tooling
+- [ ] **feat**: Simple alerting (webhook / Slack)
+- [ ] **fix**: Performance tuning
+- [ ] **chore**: Contribution guide + issue templates
+- [ ] **chore**: Release packaging (Docker images, changelog)
+- [ ] **fix**: Edge cases (network flaps, late data, schema evolution)
+
+---
+
+**Tech decisions (locked)**:
+- Messaging: Redpanda (Kafka-compatible)
+- Stream processing (Python-first): Quix Streams or Bytewax preferred for velocity
+- Table format: Delta Lake on MinIO (Iceberg alternative OK)
+- Orchestration: Airflow
+- Dashboard: Streamlit
+- Config: pydantic-settings
