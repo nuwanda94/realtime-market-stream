@@ -2,7 +2,7 @@
 
 **Local-first real-time market data streaming platform** that lands ticks into a medallion lakehouse (Bronze → Silver → Gold) with an optional Snowflake path.
 
-Built iteratively with Conventional Commits (`feat` / `chore` / `fix`) via an hourly automation. One task is completed per run.
+Built iteratively with Conventional Commits (`feat` / `chore` / `fix`).
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/status-active%20development-blue)](TASKS.md)
@@ -64,11 +64,11 @@ Live / Synthetic Market Ticks
 
 ## Current Status
 
-Under active automated construction.  
+Active development.  
 See progress and remaining work in:
 
 - [Project Plan](PROJECT_PLAN.md) – full phased roadmap
-- [Task Tracker](TASKS.md) – single-item checklist used by the hourly automation
+- [Task Tracker](TASKS.md) – checklist of remaining work
 
 ---
 

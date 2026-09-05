@@ -4,9 +4,9 @@
 **Owner**: Karan Verma (@nuwanda94)  
 **Goal**: Local-first real-time market data pipeline (synthetic + live ticks) → Redpanda/Kafka → stream processing → medallion lakehouse (Bronze/Silver/Gold on Delta/Iceberg) with optional Snowflake sink, FastAPI + live dashboard, Airflow orchestration, full observability.
 
-**Conventions**: feat / chore / fix (Conventional Commits). One item implemented per automation run.
+**Conventions**: feat / chore / fix (Conventional Commits).
 
-**State tracking**: Update the checkbox and status in `TASKS.md` after each successful implementation. Never implement more than **one** task per run.
+Progress is tracked in `TASKS.md`.
 
 ---
 
