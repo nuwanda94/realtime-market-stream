@@ -18,8 +18,12 @@ from realtime_market_stream.schemas.ticks import TradeTick
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Emit synthetic market ticks as JSONL.")
-    parser.add_argument("--symbols", default="", help="Comma-separated symbols (default: settings).")
-    parser.add_argument("--rate", type=int, default=0, help="Aggregate ticks/sec (default: settings).")
+    parser.add_argument(
+        "--symbols", default="", help="Comma-separated symbols (default: settings)."
+    )
+    parser.add_argument(
+        "--rate", type=int, default=0, help="Aggregate ticks/sec (default: settings)."
+    )
     parser.add_argument("--count", type=int, default=10, help="Number of trade ticks to emit.")
     parser.add_argument("--seed", type=int, default=None, help="Optional RNG seed.")
     return parser.parse_args(argv)
