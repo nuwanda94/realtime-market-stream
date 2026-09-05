@@ -88,6 +88,17 @@ class LakehouseSettings(BaseSettings):
         return value
 
 
+class CheckpointSettings(BaseSettings):
+    """Local processor checkpoint directory (offsets + Silver state)."""
+
+    model_config = SettingsConfigDict(env_prefix="CHECKPOINT_", extra="ignore")
+
+    dir: str = Field(
+        default=".checkpoints",
+        description="Directory for atomic JSON checkpoints (gitignored).",
+    )
+
+
 class SnowflakeSettings(BaseSettings):
     """Optional Snowflake dual-write destination.
 
@@ -139,7 +150,7 @@ class Settings(BaseSettings):
     """Root settings object.
 
     Nested sections are populated from the same env / `.env` file using their
-    prefixes (`KAFKA_`, `MINIO_`, `SNOWFLAKE_`, `LAKEHOUSE_`).
+    prefixes (`KAFKA_`, `MINIO_`, `SNOWFLAKE_`, `LAKEHOUSE_`, `CHECKPOINT_`).
     """
 
     model_config = SettingsConfigDict(
@@ -162,6 +173,7 @@ class Settings(BaseSettings):
     kafka: KafkaSettings = Field(default_factory=KafkaSettings)
     minio: MinioSettings = Field(default_factory=MinioSettings)
     lakehouse: LakehouseSettings = Field(default_factory=LakehouseSettings)
+    checkpoint: CheckpointSettings = Field(default_factory=CheckpointSettings)
     snowflake: SnowflakeSettings = Field(default_factory=SnowflakeSettings)
     generator: GeneratorSettings = Field(default_factory=GeneratorSettings)
 

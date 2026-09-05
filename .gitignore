@@ -36,6 +36,7 @@ env/
 
 # Data & local state
 data/
+.checkpoints/
 *.parquet
 *.delta
 minio-data/

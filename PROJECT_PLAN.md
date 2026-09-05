@@ -28,7 +28,7 @@ Progress is tracked in `TASKS.md`.
 - [x] **feat**: Delta / Iceberg sink with partitioning (symbol + date) — 2026-09-05 (`sinks/delta.py`)
 - [x] **chore**: Schema registry / JSON Schema support — 2026-09-06 (`schemas/registry.py`, bundled JSON Schema v1)
 - [x] **feat**: Dead-letter queue handling + replay tool — 2026-09-06 (`processing/dlq.py`, `scripts/run_dlq.py`)
-- [ ] **fix**: Idempotency & exactly-once (checkpointing)
+- [x] **fix**: Idempotency & exactly-once (checkpointing) — 2026-09-06 (`processing/checkpoint.py`)
 - [ ] **chore**: Unit + integration tests (Testcontainers / local Redpanda)
 
 ## Phase 2 – Gold Layer, Analytics & Serving (v0.3-serving)
