@@ -34,8 +34,14 @@ def test_round_robin_across_symbols() -> None:
 
 
 def test_ohlcv_bar_rolls_after_window() -> None:
-    gen = SyntheticTickGenerator(symbols=["NVDA"], ticks_per_sec=10, bar_seconds=1, seed=7)
     start = datetime(2026, 1, 1, 15, 0, 0, tzinfo=UTC)
+    gen = SyntheticTickGenerator(
+        symbols=["NVDA"],
+        ticks_per_sec=10,
+        bar_seconds=1,
+        seed=7,
+        start_time=start,
+    )
     bars: list[OhlcvBar] = []
     for offset_ms in range(0, 1500, 100):
         now = start + timedelta(milliseconds=offset_ms)

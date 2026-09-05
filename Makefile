@@ -4,7 +4,7 @@
 PYTHON ?= python3
 UV := $(shell command -v uv 2>/dev/null)
 
-.PHONY: help install install-dev lint format typecheck test pre-commit-install pre-commit clean compose-up compose-down generate-ticks
+.PHONY: help install install-dev lint format typecheck test pre-commit-install pre-commit clean compose-up compose-down generate-ticks ci
 
 help:
 	@echo "realtime-market-stream targets:"
@@ -14,9 +14,10 @@ help:
 	@echo "  make format              Run ruff format"
 	@echo "  make typecheck           Run mypy"
 	@echo "  make test                Run pytest"
+	@echo "  make ci                  Run the same checks CI runs (lint + format check + mypy + test)"
 	@echo "  make generate-ticks      Print synthetic ticks as JSONL (COUNT=10 SYMBOLS=AAPL,MSFT)"
-	@echo "  make pre-commit-install  Install git hooks"
-	@echo "  make pre-commit          Run all pre-commit hooks"
+	@echo "  make pre-commit-install  Install git hooks (pre-commit + pre-push)"
+	@echo "  make pre-commit          Run all pre-commit hooks on all files"
 	@echo "  make compose-up          Start local infra (Redpanda, MinIO, ...)"
 	@echo "  make compose-down        Stop local infra"
 	@echo "  make clean               Remove caches and build artifacts"
@@ -47,6 +48,12 @@ typecheck:
 test:
 	pytest
 
+# Mirror GitHub Actions CI jobs locally before pushing.
+ci: lint
+	ruff format --check src tests apps scripts
+	$(MAKE) typecheck
+	$(MAKE) test
+
 COUNT ?= 10
 SYMBOLS ?=
 RATE ?=
@@ -54,8 +61,9 @@ RATE ?=
 generate-ticks:
 	$(PYTHON) scripts/generate_ticks.py --count $(COUNT) $(if $(SYMBOLS),--symbols $(SYMBOLS),) $(if $(RATE),--rate $(RATE),)
 
+# Install both commit and push hooks so CI-equivalent checks run before push.
 pre-commit-install:
-	pre-commit install
+	pre-commit install --hook-type pre-commit --hook-type pre-push
 
 pre-commit:
 	pre-commit run --all-files

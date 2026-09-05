@@ -1,6 +1,16 @@
-# Local-first hooks. Install once: `make pre-commit-install` or `pre-commit install`.
+# Local hooks that mirror CI (ruff + mypy + pytest).
+# Install once:
+#   make pre-commit-install
+# or:
+#   pre-commit install --hook-type pre-commit --hook-type pre-push
+#
+# pre-commit stage: fast file hooks (whitespace, ruff, format)
+# pre-push stage: full package typecheck + unit tests (matches CI lint/test)
+
 default_language_version:
   python: python3.11
+
+default_stages: [pre-commit]
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -26,8 +36,20 @@ repos:
     rev: v1.11.2
     hooks:
       - id: mypy
+        name: mypy (package)
         additional_dependencies:
           - pydantic>=2.8
           - pydantic-settings>=2.4
         args: ["--config-file=pyproject.toml"]
         pass_filenames: false
+        stages: [pre-commit, pre-push]
+
+  - repo: local
+    hooks:
+      - id: pytest-unit
+        name: pytest (unit)
+        entry: python -m pytest tests/unit -q
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]

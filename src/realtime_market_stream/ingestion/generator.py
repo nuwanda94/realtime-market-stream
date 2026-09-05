@@ -62,6 +62,9 @@ class SyntheticTickGenerator:
         OHLCV window length. A bar is emitted when the window rolls.
     seed:
         Optional RNG seed for reproducible tests.
+    start_time:
+        Optional clock origin for bar windows (defaults to wall clock).
+        Tests should pass a fixed datetime so OHLCV roll is deterministic.
     """
 
     symbols: list[str] = field(default_factory=list)
@@ -70,6 +73,7 @@ class SyntheticTickGenerator:
     bar_seconds: int = 1
     seed: int | None = None
     venue: str = "SYNTH"
+    start_time: datetime | None = None
 
     _rng: random.Random = field(init=False, repr=False)
     _states: dict[str, _SymbolState] = field(init=False, repr=False)
@@ -87,8 +91,10 @@ class SyntheticTickGenerator:
             raise ValueError("at least one symbol is required")
 
         self._rng = random.Random(self.seed)
-        now = datetime.now(tz=UTC)
-        window_start = now.replace(microsecond=0)
+        base = self.start_time or datetime.now(tz=UTC)
+        if base.tzinfo is None:
+            base = base.replace(tzinfo=UTC)
+        window_start = base.replace(microsecond=0)
         self._states = {}
         for symbol in self.symbols:
             spot = _DEFAULT_SPOTS.get(symbol, 100.0)
@@ -109,16 +115,18 @@ class SyntheticTickGenerator:
         settings: GeneratorSettings | None = None,
         *,
         seed: int | None = None,
+        start_time: datetime | None = None,
     ) -> SyntheticTickGenerator:
         cfg = settings or GeneratorSettings()
         return cls(
             symbols=list(cfg.tick_symbols),
             ticks_per_sec=cfg.tick_rate_per_sec,
             seed=seed,
+            start_time=start_time,
         )
 
     def _step_price(self, state: _SymbolState) -> float:
-        # Driftless GBM: S * exp(-0.5 σ² dt + σ √dt Z)
+        # Driftless GBM: S * exp(-0.5 sigma^2 dt + sigma * sqrt(dt) * Z)
         z = self._rng.gauss(0.0, 1.0)
         sigma = self.volatility
         dt = self._dt_years

@@ -11,15 +11,15 @@ environment. Placeholders live in `.env.example`.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from functools import lru_cache
-from typing import Self
+from typing import Annotated, Self
 
 from pydantic import AliasChoices, Field, SecretStr, field_validator, model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
-class AppEnv(str, Enum):
+class AppEnv(StrEnum):
     """Deployment / config profile."""
 
     LOCAL = "local"
@@ -82,11 +82,14 @@ class SnowflakeSettings(BaseSettings):
 
 
 class GeneratorSettings(BaseSettings):
-    """Synthetic tick generator knobs (used by a later Phase 0 task)."""
+    """Synthetic tick generator knobs."""
 
     model_config = SettingsConfigDict(extra="ignore")
 
-    tick_symbols: list[str] = Field(default_factory=lambda: ["AAPL", "MSFT", "GOOG", "AMZN", "NVDA"])
+    # NoDecode: env values are CSV strings (TICK_SYMBOLS=AAPL,MSFT), not JSON arrays.
+    tick_symbols: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["AAPL", "MSFT", "GOOG", "AMZN", "NVDA"]
+    )
     tick_rate_per_sec: int = Field(default=50, ge=1, le=100_000)
 
     @field_validator("tick_symbols", mode="before")
