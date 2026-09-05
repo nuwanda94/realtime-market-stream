@@ -16,7 +16,7 @@ help:
 	@echo "  make test                Run pytest"
 	@echo "  make pre-commit-install  Install git hooks"
 	@echo "  make pre-commit          Run all pre-commit hooks"
-	@echo "  make compose-up          Start local infra (Redpanda, MinIO, …)"
+	@echo "  make compose-up          Start local infra (Redpanda, MinIO, ...)"
 	@echo "  make compose-down        Stop local infra"
 	@echo "  make clean               Remove caches and build artifacts"
 
@@ -39,7 +39,8 @@ lint:
 
 format:
 	ruff format src tests apps scripts
-	typecheck:
+
+typecheck:
 	mypy --config-file pyproject.toml
 
 test:
