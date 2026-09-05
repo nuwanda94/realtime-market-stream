@@ -151,6 +151,13 @@ class Settings(BaseSettings):
 
     app_env: AppEnv = Field(default=AppEnv.LOCAL)
     log_level: str = Field(default="INFO")
+    schema_registry_url: str = Field(
+        default="",
+        description=(
+            "Optional remote Schema Registry base URL. Empty uses bundled "
+            "JSON Schema files (local-first, zero extra services)."
+        ),
+    )
 
     kafka: KafkaSettings = Field(default_factory=KafkaSettings)
     minio: MinioSettings = Field(default_factory=MinioSettings)
