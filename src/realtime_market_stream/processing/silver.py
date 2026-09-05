@@ -3,11 +3,10 @@
 Consumes ``raw-ticks``, drops duplicate trade prints (by ``tick_id``),
 enriches accepted trades, and rolls them into tumbling OHLCV bars. Closed
 bars plus enriched trades are published to ``enriched-ticks`` and landed
-under a Hive-partitioned Silver layout.
+under a partitioned Silver layout (symbol + date).
 
-The lakehouse write is abstracted behind :class:`SilverSink` so unit tests
-need neither Redpanda nor MinIO. A later Delta/Iceberg task can replace the
-filesystem sink without changing this processor.
+The lakehouse write is abstracted behind :class:`SilverSink`. ``build_silver_sink``
+selects JSONL, Delta, or Iceberg from ``LAKEHOUSE_FORMAT``.
 """
 
 from __future__ import annotations
@@ -31,7 +30,8 @@ from realtime_market_stream.ingestion.service import (
 )
 from realtime_market_stream.processing.bronze import EventConsumer, KafkaEventConsumer, decode_payload
 from realtime_market_stream.schemas.ticks import OhlcvBar, Side, TradeTick
-from realtime_market_stream.sinks.silver import FilesystemSilverSink, SilverRecord, SilverSink
+from realtime_market_stream.sinks.delta import build_silver_sink
+from realtime_market_stream.sinks.silver import SilverRecord, SilverSink
 
 logger = logging.getLogger(__name__)
 
@@ -219,7 +219,7 @@ class SilverProcessor:
             raise ValueError("window_seconds must be >= 1")
         self._dedup = DedupCache(max_size=self.seen_cap)
         if self.sink is None:
-            self.sink = FilesystemSilverSink.from_settings(self.settings)
+            self.sink = build_silver_sink(self.settings)
 
     def _window(self) -> timedelta:
         return timedelta(seconds=self.window_seconds)
