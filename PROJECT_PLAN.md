@@ -12,7 +12,7 @@
 
 ## Phase 0 – Foundation & Scaffolding (v0.1-scaffold)
 
-- [ ] **chore**: Initialize repository structure, MIT license, .gitignore, basic README, folder layout
+- [x] **chore**: Initialize repository structure, MIT license, .gitignore, basic README, folder layout
 - [ ] **chore**: Docker Compose base (Redpanda, MinIO, Prometheus, Grafana, Postgres for Airflow)
 - [ ] **chore**: Project tooling (pyproject.toml / uv or Poetry, pre-commit, ruff, mypy, Makefile)
 - [ ] **chore**: CI skeleton (GitHub Actions: lint, test, build)

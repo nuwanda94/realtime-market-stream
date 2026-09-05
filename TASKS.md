@@ -15,7 +15,7 @@
 ## Current Progress
 
 ### Phase 0
-- [ ] chore: Initialize repository structure, MIT license, .gitignore, basic README, folder layout
+- [x] chore: Initialize repository structure, MIT license, .gitignore, basic README, folder layout (2026-09-05)
 - [ ] chore: Docker Compose base (Redpanda, MinIO, Prometheus, Grafana, Postgres for Airflow)
 - [ ] chore: Project tooling (pyproject.toml / uv or Poetry, pre-commit, ruff, mypy, Makefile)
 - [ ] chore: CI skeleton (GitHub Actions: lint, test, build)
