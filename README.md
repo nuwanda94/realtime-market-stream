@@ -159,6 +159,18 @@ make lint format typecheck test
 make pre-commit-install   # once per clone
 ```
 
+### Tests
+
+Default `make test` / CI pytest is **local-first**: unit tests plus in-process
+integration (generator → ingest → Bronze → Silver) using fake publishers and
+JSONL / in-memory sinks. No Redpanda or MinIO is required.
+
+```bash
+make test-unit
+make test-integration
+pytest -m broker          # optional; skipped unless localhost:19092 is up
+```
+
 | URL | Service |
 |-----|---------|
 | http://localhost:8080 | Redpanda Console |
