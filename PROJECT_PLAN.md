@@ -18,7 +18,7 @@ Progress is tracked in `TASKS.md`.
 - [x] **chore**: CI skeleton (GitHub Actions: lint, test, build) — 2026-09-05 (`.github/workflows/ci.yml`)
 - [x] **chore**: Config management (pydantic-settings, local vs Snowflake profiles) — 2026-09-05
 - [x] **feat**: Synthetic tick generator (realistic OHLCV + trade ticks, configurable rate) — 2026-09-05
-- [ ] **chore**: Topic creation script / auto-create Kafka topics (raw-ticks, enriched-ticks, alerts, dlq)
+- [x] **chore**: Topic creation script / auto-create Kafka topics (raw-ticks, enriched-ticks, alerts, dlq) — 2026-09-05
 
 ## Phase 1 – Core Streaming Pipeline (v0.2-core-stream)
 

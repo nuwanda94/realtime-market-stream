@@ -13,7 +13,7 @@ Use Conventional Commits (`feat:`, `chore:`, `fix:`) when implementing items.
 - [x] chore: CI skeleton (GitHub Actions: lint, test, build) — done 2026-09-05 (`.github/workflows/ci.yml`)
 - [x] chore: Config management (pydantic-settings, local vs Snowflake profiles) — done 2026-09-05 (`src/realtime_market_stream/config/settings.py`)
 - [x] feat: Synthetic tick generator (realistic OHLCV + trade ticks, configurable rate) — done 2026-09-05 (`src/realtime_market_stream/ingestion/generator.py`)
-- [ ] chore: Topic creation script / auto-create Kafka topics
+- [x] chore: Topic creation script / auto-create Kafka topics — done 2026-09-05 (`scripts/create_topics.py`, `src/realtime_market_stream/ingestion/topics.py`, Compose `redpanda-init`)
 
 ### Phase 1 – Core Streaming Pipeline
 - [ ] feat: Ingestion service

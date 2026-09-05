@@ -71,7 +71,7 @@ See progress and remaining work in:
 - [Project Plan](PROJECT_PLAN.md) – full phased roadmap
 - [Task Tracker](TASKS.md) – checklist of remaining work
 
-Phase 0 local infra is available: `docker compose up -d` starts Redpanda, MinIO, Prometheus, Grafana, and Postgres (Airflow metadata).
+Phase 0 local infra is available: `docker compose up -d` starts Redpanda, MinIO, Prometheus, Grafana, and Postgres (Airflow metadata). The `redpanda-init` job creates `raw-ticks`, `enriched-ticks`, `alerts`, and `dlq` (names overridable via `KAFKA_TOPIC_*`). You can also run `make create-topics` from the host.
 
 Configuration uses **pydantic-settings**. Copy `.env.example` to `.env` and pick a profile:
 
@@ -143,6 +143,7 @@ python3 -m venv .venv && source .venv/bin/activate
 make install-dev
 make test
 docker compose up -d
+make create-topics          # also runs automatically via redpanda-init
 ```
 
 Developer loop:

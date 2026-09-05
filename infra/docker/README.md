@@ -26,3 +26,13 @@ docker compose down
 ```
 
 The `minio-init` one-shot job creates the `market-lake` bucket if it is missing.
+The `redpanda-init` one-shot job creates pipeline topics (`raw-ticks`,
+`enriched-ticks`, `alerts`, `dlq`) with 3 partitions / RF=1. Topic names follow
+`KAFKA_TOPIC_*` from `.env`.
+
+From the host (after `make install`):
+
+```bash
+make create-topics
+make create-topics DRY_RUN=1
+```
