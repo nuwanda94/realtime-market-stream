@@ -37,6 +37,7 @@ from realtime_market_stream.processing.checkpoint import (
     FileCheckpointStore,
     OffsetMap,
     ProcessorCheckpoint,
+    coerce_consumed,
     iter_unprocessed,
     records_from_values,
 )
@@ -328,7 +329,7 @@ class SilverProcessor:
     def process_consumed(
         self, records: Iterable[ConsumedRecord], *, flush_open: bool = False
     ) -> list[SilverRecord]:
-        pending = list(records)
+        pending = [coerce_consumed(record) for record in records]
         fresh = list(iter_unprocessed(pending, self._offsets))
         self.stats.skipped += len(pending) - len(fresh)
         emitted: list[SilverRecord] = []
@@ -354,8 +355,8 @@ class SilverProcessor:
         pending: list[ConsumedRecord] = []
         seen = 0
         try:
-            for record in self._get_consumer().poll():
-                pending.append(record)
+            for item in self._get_consumer().poll():
+                pending.append(coerce_consumed(item))
                 seen += 1
                 if max_records is not None and seen >= max_records:
                     break
@@ -482,9 +483,10 @@ class SilverProcessor:
         )
         self.stats.checkpoints += 1
         consumer = self.consumer
-        if consumer is not None:
+        commit = getattr(consumer, "commit_offsets", None) if consumer is not None else None
+        if callable(commit):
             try:
-                consumer.commit_offsets(records)
+                commit(records)
             except Exception:  # noqa: BLE001
                 logger.debug("broker offset commit failed", exc_info=True)
 
