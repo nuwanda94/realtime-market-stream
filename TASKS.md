@@ -23,7 +23,7 @@ Use Conventional Commits (`feat:`, `chore:`, `fix:`) when implementing items.
 - [x] chore: Schema registry / JSON Schema — done 2026-09-06 (`src/realtime_market_stream/schemas/registry.py`, bundled `schemas/json/*.v1.json`, optional `SCHEMA_REGISTRY_URL`)
 - [x] feat: Dead-letter queue handling + replay tool — done 2026-09-06 (`src/realtime_market_stream/processing/dlq.py`, `scripts/run_dlq.py`, `make replay-dlq`)
 - [x] fix: Idempotency & exactly-once — done 2026-09-06 (`processing/checkpoint.py`, manual Kafka commit after sink write, Silver state restore)
-- [ ] chore: Unit + integration tests
+- [x] chore: Unit + integration tests — done 2026-09-06 (`tests/unit/*`, `tests/integration/test_local_pipeline.py`, checkpoint + in-process pipeline)
 
 ### Phase 2 – Gold Layer, Analytics & Serving
 - [ ] feat: Gold aggregations + anomaly scores

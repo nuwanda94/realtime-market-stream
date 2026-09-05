@@ -29,7 +29,7 @@ Progress is tracked in `TASKS.md`.
 - [x] **chore**: Schema registry / JSON Schema support — 2026-09-06 (`schemas/registry.py`, bundled JSON Schema v1)
 - [x] **feat**: Dead-letter queue handling + replay tool — 2026-09-06 (`processing/dlq.py`, `scripts/run_dlq.py`)
 - [x] **fix**: Idempotency & exactly-once (checkpointing) — 2026-09-06 (`processing/checkpoint.py`)
-- [ ] **chore**: Unit + integration tests (Testcontainers / local Redpanda)
+- [x] **chore**: Unit + integration tests (pytest unit + in-process pipeline; optional live Redpanda via `-m broker`) — 2026-09-06
 
 ## Phase 2 – Gold Layer, Analytics & Serving (v0.3-serving)
 
