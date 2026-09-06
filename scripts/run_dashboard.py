@@ -1,7 +1,7 @@
 """Launch the Streamlit dashboard.
 
-    python scripts/run_dashboard.py
-    make dashboard
+python scripts/run_dashboard.py
+make dashboard
 """
 
 from __future__ import annotations
