@@ -179,12 +179,29 @@ class OtelSettings(BaseSettings):
         return value
 
 
-class Settings(BaseSettings):
-    """Root settings object.
+class FlowControlSettings(BaseSettings):
+    """Ingest rate limits and producer backpressure (local-first)."""
 
-    Nested sections are populated from the same env / `.env` file using their
-    prefixes (`KAFKA_`, `MINIO_`, `SNOWFLAKE_`, `LAKEHOUSE_`, `CHECKPOINT_`, `OTEL_`).
-    """
+    model_config = SettingsConfigDict(env_prefix="FLOW_", extra="ignore")
+
+    enabled: bool = Field(default=True)
+    ingest_max_per_sec: float = Field(default=0.0, ge=0.0)
+    ingest_burst: float = Field(default=100.0, ge=1.0)
+    producer_max_inflight: int = Field(default=500, ge=0)
+    producer_block_timeout_sec: float = Field(default=5.0, ge=0.0)
+    api_requests_per_sec: float = Field(default=50.0, ge=0.0)
+    api_burst: float = Field(default=100.0, ge=1.0)
+
+    @field_validator("enabled", mode="before")
+    @classmethod
+    def _parse_enabled(cls, value: object) -> object:
+        if isinstance(value, str):
+            return value.strip().lower() in {"1", "true", "yes", "on"}
+        return value
+
+
+class Settings(BaseSettings):
+    """Root settings object."""
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -195,13 +212,7 @@ class Settings(BaseSettings):
 
     app_env: AppEnv = Field(default=AppEnv.LOCAL)
     log_level: str = Field(default="INFO")
-    schema_registry_url: str = Field(
-        default="",
-        description=(
-            "Optional remote Schema Registry base URL. Empty uses bundled "
-            "JSON Schema files (local-first, zero extra services)."
-        ),
-    )
+    schema_registry_url: str = Field(default="")
 
     kafka: KafkaSettings = Field(default_factory=KafkaSettings)
     minio: MinioSettings = Field(default_factory=MinioSettings)
@@ -210,6 +221,7 @@ class Settings(BaseSettings):
     snowflake: SnowflakeSettings = Field(default_factory=SnowflakeSettings)
     generator: GeneratorSettings = Field(default_factory=GeneratorSettings)
     otel: OtelSettings = Field(default_factory=OtelSettings)
+    flow: FlowControlSettings = Field(default_factory=FlowControlSettings)
 
     @field_validator("log_level", mode="before")
     @classmethod
@@ -229,16 +241,10 @@ class Settings(BaseSettings):
 
     @property
     def snowflake_dual_write_enabled(self) -> bool:
-        """Local profile may still dual-write if Snowflake is fully configured."""
         return self.app_env is AppEnv.SNOWFLAKE or self.snowflake.is_configured
 
 
 def get_settings() -> Settings:
-    """Return a process-wide cached Settings instance.
-
-    Tests should call :func:`clear_settings_cache` (or construct ``Settings``
-    directly with overrides) so env mutations are visible.
-    """
     return _cached_settings()
 
 
@@ -248,5 +254,4 @@ def _cached_settings() -> Settings:
 
 
 def clear_settings_cache() -> None:
-    """Drop the cached instance (used by tests)."""
     _cached_settings.cache_clear()
