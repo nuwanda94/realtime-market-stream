@@ -1,4 +1,7 @@
+#!/usr/bin/env python3
 """Run the FastAPI serving layer.
+
+Usage::
 
     python scripts/run_api.py --port 8000
     make api
@@ -7,42 +10,33 @@
 from __future__ import annotations
 
 import argparse
-import logging
 import sys
+from pathlib import Path
 
-from realtime_market_stream.config import get_settings
-from realtime_market_stream.observability.tracing import configure_tracing, shutdown_tracing
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(ROOT / "src"))
 
 
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Serve latest ticks / OHLC / anomalies")
-    parser.add_argument("--host", default="127.0.0.1")
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Run RMS FastAPI server")
+    parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument("--reload", action="store_true")
-    args = parser.parse_args(argv)
+    args = parser.parse_args()
 
     try:
         import uvicorn
     except ImportError:
-        print(
-            "FastAPI extras missing. Install with: pip install -e '.[api]'",
-            file=sys.stderr,
-        )
+        print("uvicorn is required: pip install 'realtime-market-stream[api]'", file=sys.stderr)
         return 1
 
-    settings = get_settings()
-    logging.basicConfig(level=settings.log_level)
-    configure_tracing(settings)
-    try:
-        uvicorn.run(
-            "realtime_market_stream.serving.api:app",
-            host=args.host,
-            port=args.port,
-            reload=args.reload,
-            log_level=settings.log_level.lower(),
-        )
-    finally:
-        shutdown_tracing()
+    uvicorn.run(
+        "realtime_market_stream.serving.api:app",
+        host=args.host,
+        port=args.port,
+        reload=args.reload,
+    )
     return 0
 
 
