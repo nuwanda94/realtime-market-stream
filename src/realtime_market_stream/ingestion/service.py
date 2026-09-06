@@ -3,6 +3,9 @@
 Publishes schema-validated ticks to the raw-ticks topic. Payloads that fail
 validation are routed to the DLQ. The default source is synthetic so the
 pipeline runs with zero external market-data cost.
+
+Publish path is gated by :class:`FlowController` so a fast source cannot
+flood Redpanda (token bucket + bounded inflight).
 """
 
 from __future__ import annotations
@@ -19,6 +22,11 @@ from pydantic import ValidationError
 
 from realtime_market_stream.config.settings import Settings, get_settings
 from realtime_market_stream.ingestion.generator import SyntheticTickGenerator
+from realtime_market_stream.processing.backpressure import (
+    BackpressurePublisher,
+    FlowController,
+    controller_from_settings,
+)
 from realtime_market_stream.schemas.ticks import OhlcvBar, TradeTick
 
 logger = logging.getLogger(__name__)
@@ -63,11 +71,7 @@ class KafkaEventPublisher:
 
 
 def normalize_live_payload(raw: dict[str, Any]) -> dict[str, Any]:
-    """Map a loosely-shaped live tick into TradeTick field names.
-
-    Accepts either the canonical schema or a compact live feed:
-    ``{"s": "AAPL", "p": 190.1, "sz": 10, "side": "buy"}``.
-    """
+    """Map a loosely-shaped live tick into TradeTick field names."""
     payload = dict(raw)
     if "symbol" not in payload and "s" in payload:
         payload["symbol"] = payload["s"]
@@ -89,10 +93,6 @@ def normalize_live_payload(raw: dict[str, Any]) -> dict[str, Any]:
 
 
 def parse_market_event(raw: dict[str, Any]) -> MarketEvent:
-    """Validate a raw dict as TradeTick or OhlcvBar.
-
-    Raises ``ValidationError`` when neither schema matches.
-    """
     event_type = str(raw.get("event_type", "trade")).lower()
     if event_type == "ohlcv":
         return OhlcvBar.model_validate(raw)
@@ -105,7 +105,6 @@ def parse_market_event(raw: dict[str, Any]) -> MarketEvent:
 
 
 def encode_event(event: MarketEvent) -> tuple[bytes, bytes]:
-    """Return ``(key, value)`` bytes for Kafka."""
     payload = event.to_kafka_value()
     key = event.symbol.encode("utf-8")
     value = json.dumps(payload, separators=(",", ":")).encode("utf-8")
@@ -127,35 +126,18 @@ class IngestStats:
     dlq: int = 0
     source_live: int = 0
     source_synthetic: int = 0
+    dropped: int = 0
 
 
 @dataclass
 class IngestionService:
-    """Validate ticks and publish them to Redpanda.
-
-    Parameters
-    ----------
-    settings:
-        Application settings (topics, bootstrap, generator knobs).
-    publisher:
-        Optional injectable producer. When omitted a Kafka producer is
-        created lazily on first publish.
-    generator:
-        Optional synthetic source. Built from settings when omitted.
-    source:
-        ``synthetic`` always uses the GBM generator. ``websocket`` tries
-        the live URL and raises if it cannot connect. ``auto`` tries live
-        then falls back to synthetic.
-    websocket_url:
-        Live feed URL. Empty means there is no live source.
-    """
-
     settings: Settings | None = None
     publisher: EventPublisher | None = None
     generator: SyntheticTickGenerator | None = None
     source: str = "auto"
     websocket_url: str = ""
     stats: IngestStats = field(default_factory=IngestStats)
+    flow: FlowController | None = None
     _owns_publisher: bool = field(default=False, init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -165,19 +147,29 @@ class IngestionService:
             raise ValueError("source must be auto, synthetic, or websocket")
         if self.generator is None:
             self.generator = SyntheticTickGenerator.from_settings(self.settings.generator)
+        if self.flow is None:
+            self.flow = controller_from_settings(self.settings.flow)
+        if self.publisher is not None and not isinstance(self.publisher, BackpressurePublisher):
+            self.publisher = BackpressurePublisher(self.publisher, self.flow)
 
     def _get_publisher(self) -> EventPublisher:
         if self.publisher is None:
             assert self.settings is not None
-            self.publisher = KafkaEventPublisher(self.settings.kafka.bootstrap_servers)
+            assert self.flow is not None
+            inner = KafkaEventPublisher(self.settings.kafka.bootstrap_servers)
+            self.publisher = BackpressurePublisher(inner, self.flow)
             self._owns_publisher = True
         return self.publisher
 
     def publish_event(self, event: MarketEvent, *, from_live: bool = False) -> None:
-        """Schema is already validated; send to raw-ticks."""
         assert self.settings is not None
+        before = self.flow.stats.dropped if self.flow is not None else 0
         key, value = encode_event(event)
         self._get_publisher().send(self.settings.kafka.topic_raw_ticks, key, value)
+        after = self.flow.stats.dropped if self.flow is not None else 0
+        if after > before:
+            self.stats.dropped += after - before
+            return
         self.stats.published += 1
         if from_live:
             self.stats.source_live += 1
@@ -185,7 +177,6 @@ class IngestionService:
             self.stats.source_synthetic += 1
 
     def publish_raw(self, raw: Any, *, from_live: bool = False) -> MarketEvent | None:
-        """Validate an untrusted payload. Invalid records go to the DLQ."""
         assert self.settings is not None
         if not isinstance(raw, dict):
             self._to_dlq(raw, "payload is not a JSON object")
@@ -213,14 +204,12 @@ class IngestionService:
         yield from self.generator.stream(count=count)
 
     def run_synthetic(self, count: int | None = None) -> IngestStats:
-        """Publish synthetic ticks. ``count`` limits trade prints."""
         for event in self.iter_synthetic(count=count):
             self.publish_event(event, from_live=False)
         self._get_publisher().flush()
         return self.stats
 
     def run(self, count: int | None = None) -> IngestStats:
-        """Select a source and run until ``count`` trades or interrupted."""
         try:
             if self.source == "synthetic":
                 return self.run_synthetic(count=count)
@@ -296,7 +285,6 @@ def run_ingestion(
     publisher: EventPublisher | None = None,
     settings: Settings | None = None,
 ) -> IngestStats:
-    """Module-level entry used by the CLI script."""
     service = IngestionService(
         settings=settings,
         publisher=publisher,
