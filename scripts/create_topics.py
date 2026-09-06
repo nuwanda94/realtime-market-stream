@@ -52,10 +52,7 @@ def main(argv: list[str] | None = None) -> int:
 
     print(f"broker: {bootstrap}")
     for spec in specs:
-        print(
-            f"  - {spec.name} "
-            f"(partitions={spec.partitions}, rf={spec.replication_factor})"
-        )
+        print(f"  - {spec.name} (partitions={spec.partitions}, rf={spec.replication_factor})")
 
     try:
         results = ensure_topics(specs, bootstrap_servers=bootstrap, dry_run=args.dry_run)
