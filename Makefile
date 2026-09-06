@@ -4,7 +4,7 @@
 PYTHON ?= python3
 UV := $(shell command -v uv 2>/dev/null)
 
-.PHONY: help install install-dev lint format typecheck test test-unit test-integration pre-commit-install pre-commit clean compose-up compose-down generate-ticks create-topics ingest bronze silver gold replay-dlq api dashboard query snowflake-sink snowflake-setup ci
+.PHONY: help install install-dev lint format typecheck test test-unit test-integration pre-commit-install pre-commit clean compose-up compose-down generate-ticks create-topics ingest bronze silver gold replay-dlq api dashboard query snowflake-sink snowflake-setup backfill schema-check freshness ci
 
 help:
 	@echo "realtime-market-stream targets:"
@@ -28,6 +28,9 @@ help:
 	@echo "  make query               Scan lakehouse views (VIEW=silver_ohlc SYMBOL=AAPL LIMIT=20)"
 	@echo "  make snowflake-sink      Flush ticks through Snowflake sink (COUNT=10 DATA_ROOT=)"
 	@echo "  make snowflake-setup     Render Snowflake SQL (APPLY=1 to execute live)"
+	@echo "  make backfill            Synthetic Bronze backfill without Kafka (COUNT=20 DATA_ROOT=)"
+	@echo "  make schema-check        Compare bundled JSON Schema to Pydantic models"
+	@echo "  make freshness           Lakehouse freshness probe (VIEW=bronze_ticks DATA_ROOT=)"
 	@echo "  make create-topics       Idempotently create Redpanda topics (DRY_RUN=1 to preview)"
 	@echo "  make pre-commit-install  Install git hooks (pre-commit + pre-push)"
 	@echo "  make pre-commit          Run all pre-commit hooks on all files"
@@ -129,6 +132,15 @@ snowflake-sink:
 
 snowflake-setup:
 	$(PYTHON) scripts/setup_snowflake.py $(if $(APPLY),--apply,) $(if $(SQL_DIR),--sql-dir $(SQL_DIR),)
+
+backfill:
+	$(PYTHON) scripts/run_orchestration.py backfill --count $(COUNT) $(if $(DATA_ROOT),--data-root $(DATA_ROOT),)
+
+schema-check:
+	$(PYTHON) scripts/run_orchestration.py schema
+
+freshness:
+	$(PYTHON) scripts/run_orchestration.py freshness --view $(VIEW) $(if $(DATA_ROOT),--data-root $(DATA_ROOT),)
 
 create-topics:
 	$(PYTHON) scripts/create_topics.py $(if $(DRY_RUN),--dry-run,)
