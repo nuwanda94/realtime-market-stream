@@ -306,50 +306,62 @@ class GoldIcebergSink:
         return self.inner.write(list(records))
 
 
+def _wrap(primary: Any, settings: Settings, local_root: str | Path | None) -> Any:
+    from realtime_market_stream.sinks.dual import maybe_wrap_dual_write
+
+    return maybe_wrap_dual_write(primary, settings, local_root=local_root)
+
+
 def build_bronze_sink(settings: Settings, *, local_root: str | Path | None = None) -> Any:
     fmt = settings.lakehouse.format
     if fmt is LakehouseFormat.DELTA:
-        return BronzeDeltaSink(
+        sink: Any = BronzeDeltaSink(
             DeltaLakeSink.from_settings(settings, layer="bronze", local_root=local_root)
         )
-    if fmt is LakehouseFormat.ICEBERG:
-        return BronzeIcebergSink(
+    elif fmt is LakehouseFormat.ICEBERG:
+        sink = BronzeIcebergSink(
             IcebergPartitionSink.from_settings(settings, layer="bronze", local_root=local_root)
         )
-    from realtime_market_stream.sinks.bronze import FilesystemBronzeSink
+    else:
+        from realtime_market_stream.sinks.bronze import FilesystemBronzeSink
 
-    return FilesystemBronzeSink.from_settings(settings, local_root=local_root)
+        sink = FilesystemBronzeSink.from_settings(settings, local_root=local_root)
+    return _wrap(sink, settings, local_root)
 
 
 def build_silver_sink(settings: Settings, *, local_root: str | Path | None = None) -> Any:
     fmt = settings.lakehouse.format
     if fmt is LakehouseFormat.DELTA:
-        return SilverDeltaSink(
+        sink: Any = SilverDeltaSink(
             DeltaLakeSink.from_settings(settings, layer="silver", local_root=local_root)
         )
-    if fmt is LakehouseFormat.ICEBERG:
-        return SilverIcebergSink(
+    elif fmt is LakehouseFormat.ICEBERG:
+        sink = SilverIcebergSink(
             IcebergPartitionSink.from_settings(settings, layer="silver", local_root=local_root)
         )
-    from realtime_market_stream.sinks.silver import FilesystemSilverSink
+    else:
+        from realtime_market_stream.sinks.silver import FilesystemSilverSink
 
-    return FilesystemSilverSink.from_settings(settings, local_root=local_root)
+        sink = FilesystemSilverSink.from_settings(settings, local_root=local_root)
+    return _wrap(sink, settings, local_root)
 
 
 def build_gold_sink(settings: Settings, *, local_root: str | Path | None = None) -> Any:
     fmt = settings.lakehouse.format
     if fmt is LakehouseFormat.DELTA:
-        return GoldDeltaSink(
+        sink: Any = GoldDeltaSink(
             DeltaLakeSink.from_settings(
                 settings, layer="gold", table="bars", local_root=local_root
             )
         )
-    if fmt is LakehouseFormat.ICEBERG:
-        return GoldIcebergSink(
+    elif fmt is LakehouseFormat.ICEBERG:
+        sink = GoldIcebergSink(
             IcebergPartitionSink.from_settings(
                 settings, layer="gold", table="bars", local_root=local_root
             )
         )
-    from realtime_market_stream.sinks.gold import FilesystemGoldSink
+    else:
+        from realtime_market_stream.sinks.gold import FilesystemGoldSink
 
-    return FilesystemGoldSink.from_settings(settings, local_root=local_root)
+        sink = FilesystemGoldSink.from_settings(settings, local_root=local_root)
+    return _wrap(sink, settings, local_root)
