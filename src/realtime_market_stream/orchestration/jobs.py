@@ -17,6 +17,7 @@ from realtime_market_stream.config.settings import Settings, get_settings
 from realtime_market_stream.ingestion.generator import SyntheticTickGenerator
 from realtime_market_stream.processing.bronze import BronzeProcessor
 from realtime_market_stream.processing.checkpoint import FileCheckpointStore
+from realtime_market_stream.processing.quality import QualityReport, evaluate_rows
 from realtime_market_stream.schemas.registry import (
     SCHEMA_VERSION,
     SchemaSubject,
@@ -77,11 +78,7 @@ def run_backfill(
     settings: Settings | None = None,
     seed: int | None = 42,
 ) -> BackfillResult:
-    """Generate synthetic ticks and land them in Bronze without Kafka.
-
-    Silver / Gold remain streaming processors; this job seeds the lakehouse
-    so DQ and serving can run locally (or as an Airflow backfill).
-    """
+    """Generate synthetic ticks and land them in Bronze without Kafka."""
 
     cfg = settings or get_settings()
     root = Path(data_root) if data_root else Path("data") / cfg.minio.bucket
@@ -115,11 +112,7 @@ def run_backfill(
 
 
 def run_schema_evolution_check() -> SchemaCheckResult:
-    """Compare bundled JSON Schema files to live Pydantic models.
-
-    Drift is reported but not auto-applied — operators re-run
-    ``python scripts/export_schemas.py --regen`` after review.
-    """
+    """Compare bundled JSON Schema files to live Pydantic models."""
 
     drifted: list[str] = []
     subjects = [item.value for item in SchemaSubject]
@@ -144,11 +137,7 @@ def run_freshness_check(
     settings: Settings | None = None,
     limit: int = 50,
 ) -> FreshnessResult:
-    """Lightweight lakehouse freshness probe used by the DQ DAG.
-
-    Full data-quality rules (nulls, volume anomalies) are a later task;
-    this only checks that the named view has rows and a recent timestamp.
-    """
+    """Lightweight lakehouse freshness probe used by the DQ DAG."""
 
     from realtime_market_stream.serving.query import QueryEngine
 
@@ -182,5 +171,38 @@ def run_freshness_check(
     )
 
 
-def result_as_dict(result: BackfillResult | SchemaCheckResult | FreshnessResult) -> dict[str, Any]:
+def run_data_quality_check(
+    *,
+    view: str = "bronze_ticks",
+    max_age_seconds: int = 86_400,
+    iqr_multiplier: float = 3.0,
+    data_root: str | Path | None = None,
+    settings: Settings | None = None,
+    limit: int = 500,
+    rows: list[dict[str, Any]] | None = None,
+) -> QualityReport:
+    """Run freshness + nulls + volume-anomaly rules over a lakehouse view."""
+
+    if rows is None:
+        from realtime_market_stream.serving.query import QueryEngine
+
+        cfg = settings or get_settings()
+        engine = QueryEngine.from_settings(cfg, local_root=data_root, backend="jsonl")
+        rows = engine.scan(view, limit=limit)
+    report = evaluate_rows(
+        rows,
+        view=view,
+        max_age_seconds=max_age_seconds,
+        iqr_multiplier=iqr_multiplier,
+    )
+    if not report.ok:
+        logger.warning("data quality failed view=%s report=%s", view, report.as_dict())
+    return report
+
+
+def result_as_dict(
+    result: BackfillResult | SchemaCheckResult | FreshnessResult | QualityReport,
+) -> dict[str, Any]:
+    if isinstance(result, QualityReport):
+        return result.as_dict()
     return asdict(result)

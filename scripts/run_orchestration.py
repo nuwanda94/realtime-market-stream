@@ -5,6 +5,7 @@ Usage:
     python scripts/run_orchestration.py backfill --count 10
     python scripts/run_orchestration.py schema
     python scripts/run_orchestration.py freshness --data-root ./data/market-lake
+    python scripts/run_orchestration.py dq --data-root ./data/market-lake
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ import json
 from realtime_market_stream.orchestration.jobs import (
     result_as_dict,
     run_backfill,
+    run_data_quality_check,
     run_freshness_check,
     run_schema_evolution_check,
 )
@@ -36,6 +38,13 @@ def main(argv: list[str] | None = None) -> int:
     freshness.add_argument("--data-root", default="")
     freshness.add_argument("--max-age-seconds", type=int, default=86_400)
 
+    dq = sub.add_parser("dq", help="Freshness + nulls + volume anomaly rules")
+    dq.add_argument("--view", default="bronze_ticks")
+    dq.add_argument("--data-root", default="")
+    dq.add_argument("--max-age-seconds", type=int, default=86_400)
+    dq.add_argument("--iqr-multiplier", type=float, default=3.0)
+    dq.add_argument("--limit", type=int, default=500)
+
     args = parser.parse_args(argv)
     if args.command == "backfill":
         result = run_backfill(
@@ -45,6 +54,14 @@ def main(argv: list[str] | None = None) -> int:
         )
     elif args.command == "schema":
         result = run_schema_evolution_check()
+    elif args.command == "dq":
+        result = run_data_quality_check(
+            view=args.view,
+            data_root=args.data_root or None,
+            max_age_seconds=args.max_age_seconds,
+            iqr_multiplier=args.iqr_multiplier,
+            limit=args.limit,
+        )
     else:
         result = run_freshness_check(
             view=args.view,

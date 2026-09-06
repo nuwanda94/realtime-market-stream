@@ -1,7 +1,7 @@
-"""rms_dq_checks — lakehouse freshness probe.
+"""rms_dq_checks — freshness, nulls, and volume-anomaly rules.
 
-Heavier null / volume anomaly rules land in a later task. This DAG only
-asks whether Bronze (or another view) has recent rows.
+Job body lives in ``orchestration.jobs.run_data_quality_check`` so the same
+rules run locally via ``make dq`` without Airflow.
 """
 
 from __future__ import annotations
@@ -16,8 +16,8 @@ except ImportError:  # pragma: no cover
     DAG = None  # type: ignore[misc, assignment]
 
 
-def _freshness(**context: object) -> dict[str, object]:
-    from realtime_market_stream.orchestration.jobs import result_as_dict, run_freshness_check
+def _quality(**context: object) -> dict[str, object]:
+    from realtime_market_stream.orchestration.jobs import result_as_dict, run_data_quality_check
 
     conf: dict[str, object] = {}
     dag_run = context.get("dag_run") if isinstance(context, dict) else None
@@ -25,22 +25,24 @@ def _freshness(**context: object) -> dict[str, object]:
         conf = dict(getattr(dag_run, "conf", None) or {})
     view = str(conf.get("view", "bronze_ticks"))
     max_age = int(conf.get("max_age_seconds", 86_400))
+    iqr = float(conf.get("iqr_multiplier", 3.0))
     data_root = conf.get("data_root")
-    result = run_freshness_check(
+    result = run_data_quality_check(
         view=view,
         max_age_seconds=max_age,
+        iqr_multiplier=iqr,
         data_root=str(data_root) if data_root else None,
     )
     payload = result_as_dict(result)
-    if result.stale:
-        raise RuntimeError(f"freshness check failed: {payload}")
+    if not result.ok:
+        raise RuntimeError(f"data quality check failed: {payload}")
     return payload
 
 
 if DAG is not None:
     with DAG(
         dag_id="rms_dq_checks",
-        description="Lakehouse freshness check (row count + latest timestamp).",
+        description="Lakehouse DQ: freshness, required-field nulls, volume IQR.",
         schedule_interval="@hourly",
         start_date=days_ago(1),
         catchup=False,
@@ -50,6 +52,6 @@ if DAG is not None:
             "retries": 1,
             "retry_delay": timedelta(minutes=5),
         },
-        tags=["rms", "dq", "freshness"],
+        tags=["rms", "dq", "freshness", "quality"],
     ) as dag:
-        PythonOperator(task_id="bronze_freshness", python_callable=_freshness)
+        PythonOperator(task_id="data_quality", python_callable=_quality)

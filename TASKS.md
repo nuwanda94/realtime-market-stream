@@ -38,7 +38,7 @@ Use Conventional Commits (`feat:`, `chore:`, `fix:`) when implementing items.
 - [x] feat: Dual-write mode — done 2026-09-06 (`sinks/dual.py`, wraps Bronze/Silver/Gold)
 - [x] chore: Snowflake setup scripts — done 2026-09-06 (`infra/snowflake/*.sql`, `sinks/snowflake_setup.py`, `scripts/setup_snowflake.py`, `make snowflake-setup`)
 - [x] feat: Airflow DAGs — done 2026-09-06 (`orchestration/jobs.py`, `airflow/dags/rms_{backfill,dq_checks,schema_evolution}.py`, `make backfill|schema-check|freshness`)
-- [ ] fix: Data quality rules
+- [x] fix: Data quality rules — done 2026-09-06 (`processing/quality.py`, freshness + nulls + volume IQR, `make dq`, DAG `rms_dq_checks`)
 - [ ] chore: Cost & performance documentation
 
 ### Phase 4 – Polish, Docs, Observability & Release

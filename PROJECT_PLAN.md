@@ -46,7 +46,7 @@ Progress is tracked in `TASKS.md`.
 - [x] **feat**: Dual-write mode (local Delta + optional Snowflake) — 2026-09-06 (`sinks/dual.py`)
 - [x] **chore**: Snowflake setup scripts (tables, stages, pipes, RBAC examples) — 2026-09-06 (`infra/snowflake/`, `make snowflake-setup`)
 - [x] **feat**: Airflow DAGs (backfill, DQ checks, schema evolution) — 2026-09-06 (`orchestration/jobs.py`, `airflow/dags/`)
-- [ ] **fix**: Data quality rules (freshness, nulls, volume anomalies)
+- [x] **fix**: Data quality rules (freshness, nulls, volume anomalies) — 2026-09-06 (`processing/quality.py`, `make dq`)
 - [ ] **chore**: Cost & performance documentation
 
 ## Phase 4 – Polish, Docs, Observability & Release (v1.0)
