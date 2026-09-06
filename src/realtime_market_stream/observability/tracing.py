@@ -174,7 +174,7 @@ def instrument_fastapi(app: Any, settings: Settings | None = None) -> bool:
     try:
         FastAPIInstrumentor.instrument_app(app)
     except Exception:  # noqa: BLE001
-        logger.debug("FastAPI instrumentation failed", exp_info=True)
+        logger.debug("FastAPI instrumentation failed", exc_info=True)
         return False
     return True
 
