@@ -29,7 +29,7 @@ Use Conventional Commits (`feat:`, `chore:`, `fix:`) when implementing items.
 - [x] feat: Gold aggregations + anomaly scores — done 2026-09-06 (`processing/gold.py`, z-score + IQR on rolling OHLCV, `alerts` topic, `make gold`)
 - [x] feat: FastAPI service — done 2026-09-06 (`serving/api.py`, `serving/store.py`, `apps/api/main.py`, `make api`; `/health`, `/metrics`, `/ticks/latest`, `/ohlc`, `/anomalies`)
 - [x] feat: Live Streamlit dashboard — done 2026-09-06 (`serving/dashboard.py`, `apps/dashboard/app.py`, `make dashboard`)
-- [ ] feat: Query layer (DuckDB / Polars)
+- [x] feat: Query layer (DuckDB / Polars) — done 2026-09-06 (`serving/query.py`, `scripts/run_query.py`, `make query`; JSONL fallback, optional `.[query]` extras)
 - [ ] chore: OpenTelemetry instrumentation
 - [ ] fix: Backpressure & rate limiting
 

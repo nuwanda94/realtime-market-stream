@@ -1,8 +1,8 @@
 """Read Hive-partitioned JSONL lakehouse files for the serving API.
 
 Zero extra dependencies: walk ``data/{bucket}/{layer}/...`` and parse JSONL
-parts written by the filesystem sinks. Delta/Iceberg tables are skipped
-until the dedicated DuckDB/Polars query layer lands.
+parts written by the filesystem sinks. Prefer :class:`QueryEngine` when DuckDB
+or Polars extras are installed (see ``serving/query.py``).
 """
 
 from __future__ import annotations
