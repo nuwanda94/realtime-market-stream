@@ -109,7 +109,7 @@ class ConnectorSnowflakeChannel:
         qualified = f"{self.database}.{self.schema_name}.{table}"
         columns = _union_columns(rows)
         placeholders = ", ".join(["%s"] * len(columns))
-        col_sql = ", ".join(f'\"{col.upper()}\"' for col in columns)
+        col_sql = ", ".join(f'"{col.upper()}"' for col in columns)
         sql = f"INSERT INTO {qualified} ({col_sql}) VALUES ({placeholders})"
         values = [tuple(_bind_value(row.get(col)) for col in columns) for row in rows]
         with connector.connect(**dict(self.connect_kwargs)) as connection:
@@ -233,9 +233,7 @@ def _channel_from_settings(
         root = Path(local_root) if local_root is not None else Path("data") / "snowflake"
         database = sf.database or "LOCAL"
         schema_name = sf.schema_name or "PUBLIC"
-        return LocalJsonlSnowflakeChannel(
-            root=root, database=database, schema_name=schema_name
-        )
+        return LocalJsonlSnowflakeChannel(root=root, database=database, schema_name=schema_name)
     if not sf.is_configured:
         raise ValueError(
             "Snowflake streaming sink needs SNOWFLAKE_* connection fields "
@@ -260,11 +258,6 @@ def build_snowflake_sink(
     capture is requested, or ``force=True`` (CLI dry-runs).
     """
     sf = settings.snowflake
-    if not (
-        force
-        or settings.snowflake_dual_write_enabled
-        or sf.local_capture
-        or sf.is_configured
-    ):
+    if not (force or settings.snowflake_dual_write_enabled or sf.local_capture or sf.is_configured):
         return None
     return SnowflakeStreamingSink.from_settings(settings, local_root=local_root)

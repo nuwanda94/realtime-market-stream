@@ -351,9 +351,7 @@ def build_gold_sink(settings: Settings, *, local_root: str | Path | None = None)
     fmt = settings.lakehouse.format
     if fmt is LakehouseFormat.DELTA:
         sink: Any = GoldDeltaSink(
-            DeltaLakeSink.from_settings(
-                settings, layer="gold", table="bars", local_root=local_root
-            )
+            DeltaLakeSink.from_settings(settings, layer="gold", table="bars", local_root=local_root)
         )
     elif fmt is LakehouseFormat.ICEBERG:
         sink = GoldIcebergSink(
