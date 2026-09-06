@@ -92,7 +92,7 @@ VIEWS: dict[str, LakehouseView] = {
         name="gold_anomalies",
         layer_glob="gold/bars/**/*.{jsonl,json,parquet}",
         description="Gold bars flagged is_anomaly",
-        extra_filter=lambda row: row.get("is_anomaly") in {True, "true", 1, "1"},
+        extra_filter=lambda row: row.get("is_anomaly") in {True, "true", "1"},
     ),
 }
 

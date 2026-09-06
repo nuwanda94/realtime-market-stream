@@ -14,7 +14,11 @@ import sys
 
 from realtime_market_stream.config.settings import get_settings
 from realtime_market_stream.ingestion.service import run_ingestion
-from realtime_market_stream.observability.tracing import configure_tracing, shutdown_tracing, start_span
+from realtime_market_stream.observability.tracing import (
+    configure_tracing,
+    shutdown_tracing,
+    start_span,
+)
 
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:

@@ -23,9 +23,7 @@ from realtime_market_stream.processing.silver import SilverProcessor
 from realtime_market_stream.schemas.ticks import TradeTick
 from realtime_market_stream.sinks.bronze import FilesystemBronzeSink, InMemoryBronzeSink
 from realtime_market_stream.sinks.silver import FilesystemSilverSink, InMemorySilverSink
-
 from tests.conftest import FakePublisher, make_trade
-
 
 pytestmark = pytest.mark.integration
 
