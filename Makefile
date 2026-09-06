@@ -4,7 +4,7 @@
 PYTHON ?= python3
 UV := $(shell command -v uv 2>/dev/null)
 
-.PHONY: help install install-dev lint format typecheck test test-unit test-integration pre-commit-install pre-commit clean compose-up compose-down generate-ticks create-topics ingest bronze silver gold replay-dlq api dashboard ci
+.PHONY: help install install-dev lint format typecheck test test-unit test-integration pre-commit-install pre-commit clean compose-up compose-down generate-ticks create-topics ingest bronze silver gold replay-dlq api dashboard query ci
 
 help:
 	@echo "realtime-market-stream targets:"
@@ -25,6 +25,7 @@ help:
 	@echo "  make replay-dlq          Replay DLQ onto raw-ticks (MAX_RECORDS=20 DRY_RUN=1 INSPECT=1)"
 	@echo "  make api                 Serve FastAPI (HOST=127.0.0.1 PORT=8000)"
 	@echo "  make dashboard           Live Streamlit UI (HOST=127.0.0.1 DASH_PORT=8501)"
+	@echo "  make query               Scan lakehouse views (VIEW=silver_ohlc SYMBOL=AAPL LIMIT=20)"
 	@echo "  make create-topics       Idempotently create Redpanda topics (DRY_RUN=1 to preview)"
 	@echo "  make pre-commit-install  Install git hooks (pre-commit + pre-push)"
 	@echo "  make pre-commit          Run all pre-commit hooks on all files"
@@ -87,6 +88,10 @@ ERROR_CONTAINS ?=
 HOST ?= 127.0.0.1
 PORT ?= 8000
 DASH_PORT ?= 8501
+VIEW ?= silver_ohlc
+LIMIT ?= 20
+BACKEND ?= auto
+SQL ?=
 
 generate-ticks:
 	$(PYTHON) scripts/generate_ticks.py --count $(COUNT) $(if $(SYMBOLS),--symbols $(SYMBOLS),) $(if $(RATE),--rate $(RATE),)
@@ -111,6 +116,9 @@ api:
 
 dashboard:
 	$(PYTHON) scripts/run_dashboard.py --host $(HOST) --port $(DASH_PORT)
+
+query:
+	$(PYTHON) scripts/run_query.py --view $(VIEW) --limit $(LIMIT) --backend $(BACKEND) $(if $(SYMBOLS),--symbol $(SYMBOLS),) $(if $(DATA_ROOT),--data-root $(DATA_ROOT),) $(if $(SQL),--sql $(SQL),)
 
 create-topics:
 	$(PYTHON) scripts/create_topics.py $(if $(DRY_RUN),--dry-run,)

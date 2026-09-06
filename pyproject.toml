@@ -42,6 +42,10 @@ lakehouse = [
   "deltalake>=0.18",
   "pyarrow>=15",
 ]
+query = [
+  "duckdb>=1.0",
+  "polars>=1.0",
+]
 api = [
   "fastapi>=0.115",
   "uvicorn[standard]>=0.30",
@@ -83,7 +87,7 @@ select = [
   "F",   # pyflakes
   "I",   # isort
   "B",   # flake8-bugbear
-  "UP",  # pyupgrade
+  "UP",   # pyupgrade
   "N",   # pep8-naming
 ]
 ignore = [
