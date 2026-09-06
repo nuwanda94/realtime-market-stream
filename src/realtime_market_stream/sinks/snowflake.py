@@ -19,9 +19,10 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Mapping, Protocol
+from typing import Any, Protocol
 from uuid import uuid4
 
 from realtime_market_stream.config.settings import Settings
@@ -108,7 +109,7 @@ class ConnectorSnowflakeChannel:
         qualified = f"{self.database}.{self.schema_name}.{table}"
         columns = _union_columns(rows)
         placeholders = ", ".join(["%s"] * len(columns))
-        col_sql = ", ".join(f'"{col.upper()}"' for col in columns)
+        col_sql = ", ".join(f'\"{col.upper()}\"' for col in columns)
         sql = f"INSERT INTO {qualified} ({col_sql}) VALUES ({placeholders})"
         values = [tuple(_bind_value(row.get(col)) for col in columns) for row in rows]
         with connector.connect(**dict(self.connect_kwargs)) as connection:
