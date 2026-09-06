@@ -20,9 +20,10 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Mapping, Protocol
+from typing import Any, Protocol
 from urllib.parse import urlparse
 from uuid import uuid4
 
@@ -286,7 +287,7 @@ class BronzeIcebergSink:
     def __init__(self, inner: IcebergPartitionSink) -> None:
         self.inner = inner
 
-    def write(self, records: list[BronzeRecord]) -> list[str]:
+    def write(self, records: list[GoldRecord]) -> list[str]:
         return self.inner.write(list(records))
 
 
