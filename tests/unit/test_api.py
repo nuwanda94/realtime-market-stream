@@ -13,7 +13,6 @@ from realtime_market_stream.sinks.bronze import BronzeRecord, FilesystemBronzeSi
 from realtime_market_stream.sinks.gold import FilesystemGoldSink, GoldRecord
 from realtime_market_stream.sinks.silver import FilesystemSilverSink, SilverRecord
 
-
 pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient  # noqa: E402
 
