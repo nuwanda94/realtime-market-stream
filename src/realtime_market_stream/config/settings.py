@@ -102,10 +102,13 @@ class CheckpointSettings(BaseSettings):
 class SnowflakeSettings(BaseSettings):
     """Optional Snowflake dual-write destination.
 
-    All fields default to empty. When ``APP_ENV=snowflake`` the parent
-    ``Settings`` model requires account, user, warehouse, database, and schema.
-    Password may still be supplied via a secret manager later; it is optional
-    here so key-pair auth remains possible.
+    All connection fields default to empty. When ``APP_ENV=snowflake`` the
+    parent ``Settings`` model requires account, user, warehouse, database,
+    and schema. Password may still be supplied via a secret manager later;
+    it is optional here so key-pair auth remains possible.
+
+    ``local_capture`` (default True) writes Snowpipe-Streaming-shaped JSONL
+    batches locally so the sink works with zero cloud cost.
     """
 
     model_config = SettingsConfigDict(env_prefix="SNOWFLAKE_", extra="ignore")
@@ -119,6 +122,26 @@ class SnowflakeSettings(BaseSettings):
         default="",
         validation_alias=AliasChoices("SNOWFLAKE_SCHEMA", "schema_name"),
     )
+    role: str = Field(default="")
+    table_ticks: str = Field(default="TICKS")
+    table_bars: str = Field(default="BARS")
+    private_key_path: str = Field(
+        default="",
+        description="Optional path to a PKCS8 private key for key-pair auth.",
+    )
+    channel_name: str = Field(default="market-stream")
+    batch_size: int = Field(default=500, ge=1, le=100_000)
+    local_capture: bool = Field(
+        default=True,
+        description="Write JSONL batches locally instead of opening a Snowflake session.",
+    )
+
+    @field_validator("local_capture", mode="before")
+    @classmethod
+    def _parse_local_capture(cls, value: object) -> object:
+        if isinstance(value, str):
+            return value.strip().lower() in {"1", "true", "yes", "on"}
+        return value
 
     @property
     def is_configured(self) -> bool:
