@@ -13,6 +13,7 @@ import logging
 import sys
 
 from realtime_market_stream.config.settings import get_settings
+from realtime_market_stream.observability.tracing import configure_tracing, shutdown_tracing, start_span
 from realtime_market_stream.processing.bronze import run_bronze
 from realtime_market_stream.sinks.delta import build_bronze_sink
 
@@ -42,13 +43,18 @@ def main(argv: list[str] | None = None) -> int:
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
     settings = get_settings()
+    configure_tracing(settings)
     sink = build_bronze_sink(settings, local_root=args.data_root or None)
-    stats = run_bronze(
-        max_records=args.max_records,
-        batch_size=args.batch_size,
-        sink=sink,
-        settings=settings,
-    )
+    try:
+        with start_span("processor.bronze.run", batch_size=args.batch_size):
+            stats = run_bronze(
+                max_records=args.max_records,
+                batch_size=args.batch_size,
+                sink=sink,
+                settings=settings,
+            )
+    finally:
+        shutdown_tracing()
     print(
         f"consumed={stats.consumed} written={stats.written} dlq={stats.dlq} batches={stats.batches}",
         file=sys.stderr,

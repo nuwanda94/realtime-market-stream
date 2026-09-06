@@ -13,6 +13,7 @@ import logging
 import sys
 
 from realtime_market_stream.config.settings import get_settings
+from realtime_market_stream.observability.tracing import configure_tracing, shutdown_tracing, start_span
 from realtime_market_stream.processing.silver import run_silver
 from realtime_market_stream.sinks.delta import build_silver_sink
 
@@ -44,13 +45,18 @@ def main(argv: list[str] | None = None) -> int:
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
     settings = get_settings()
+    configure_tracing(settings)
     sink = build_silver_sink(settings, local_root=args.data_root or None)
-    stats = run_silver(
-        max_records=args.max_records,
-        window_seconds=args.window_seconds,
-        sink=sink,
-        settings=settings,
-    )
+    try:
+        with start_span("processor.silver.run", window_seconds=args.window_seconds):
+            stats = run_silver(
+                max_records=args.max_records,
+                window_seconds=args.window_seconds,
+                sink=sink,
+                settings=settings,
+            )
+    finally:
+        shutdown_tracing()
     print(
         "consumed={c} trades={t} dups={d} bars={b} written={w} published={p} dlq={q}".format(
             c=stats.consumed,

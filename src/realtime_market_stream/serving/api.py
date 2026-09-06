@@ -22,6 +22,7 @@ from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 
 from realtime_market_stream.config.settings import Settings, get_settings
+from realtime_market_stream.observability.tracing import instrument_fastapi, start_span
 from realtime_market_stream.serving.store import LakehouseStore, lakehouse_root
 
 
@@ -93,6 +94,7 @@ def create_app(
     application.state.settings = resolved
     application.state.store = lake_store
     application.state.metrics = metrics
+    instrument_fastapi(application, resolved)
 
     @application.middleware("http")
     async def _count_requests(request: Request, call_next: Any) -> Any:
@@ -118,7 +120,8 @@ def create_app(
         limit: int = Query(default=50, ge=1, le=1000),
         layer: str = Query(default="bronze", pattern="^(bronze|silver)$"),
     ) -> TickListResponse:
-        items = lake_store.latest_ticks(symbol=symbol, limit=limit, layer=layer)
+        with start_span("api.ticks.latest", layer=layer, limit=limit):
+            items = lake_store.latest_ticks(symbol=symbol, limit=limit, layer=layer)
         return TickListResponse(count=len(items), items=items)
 
     @application.get("/ohlc", response_model=OhlcListResponse)
@@ -126,7 +129,8 @@ def create_app(
         symbol: str | None = Query(default=None),
         limit: int = Query(default=50, ge=1, le=1000),
     ) -> OhlcListResponse:
-        items = lake_store.ohlc_bars(symbol=symbol, limit=limit)
+        with start_span("api.ohlc", limit=limit):
+            items = lake_store.ohlc_bars(symbol=symbol, limit=limit)
         return OhlcListResponse(count=len(items), items=items)
 
     @application.get("/anomalies", response_model=AnomalyListResponse)
@@ -134,7 +138,8 @@ def create_app(
         symbol: str | None = Query(default=None),
         limit: int = Query(default=50, ge=1, le=1000),
     ) -> AnomalyListResponse:
-        items = lake_store.anomalies(symbol=symbol, limit=limit)
+        with start_span("api.anomalies", limit=limit):
+            items = lake_store.anomalies(symbol=symbol, limit=limit)
         return AnomalyListResponse(count=len(items), items=items)
 
     @application.get("/")

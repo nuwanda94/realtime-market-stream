@@ -146,11 +146,44 @@ class GeneratorSettings(BaseSettings):
         return value
 
 
+class OtelSettings(BaseSettings):
+    """Optional OpenTelemetry tracing (disabled by default, zero extra cost)."""
+
+    model_config = SettingsConfigDict(env_prefix="OTEL_", extra="ignore")
+
+    enabled: bool = Field(default=False)
+    service_name: str = Field(default="realtime-market-stream")
+    exporter: str = Field(
+        default="console",
+        description="console | otlp | none. otlp needs OTEL_EXPORTER_OTLP_ENDPOINT.",
+    )
+    endpoint: str = Field(
+        default="",
+        validation_alias=AliasChoices("OTEL_EXPORTER_OTLP_ENDPOINT", "endpoint"),
+        description="OTLP HTTP endpoint, e.g. http://localhost:4318/v1/traces",
+    )
+    sample_ratio: float = Field(default=1.0, ge=0.0, le=1.0)
+
+    @field_validator("exporter", mode="before")
+    @classmethod
+    def _lower_exporter(cls, value: object) -> object:
+        if isinstance(value, str):
+            return value.strip().lower()
+        return value
+
+    @field_validator("enabled", mode="before")
+    @classmethod
+    def _parse_enabled(cls, value: object) -> object:
+        if isinstance(value, str):
+            return value.strip().lower() in {"1", "true", "yes", "on"}
+        return value
+
+
 class Settings(BaseSettings):
     """Root settings object.
 
     Nested sections are populated from the same env / `.env` file using their
-    prefixes (`KAFKA_`, `MINIO_`, `SNOWFLAKE_`, `LAKEHOUSE_`, `CHECKPOINT_`).
+    prefixes (`KAFKA_`, `MINIO_`, `SNOWFLAKE_`, `LAKEHOUSE_`, `CHECKPOINT_`, `OTEL_`).
     """
 
     model_config = SettingsConfigDict(
@@ -176,6 +209,7 @@ class Settings(BaseSettings):
     checkpoint: CheckpointSettings = Field(default_factory=CheckpointSettings)
     snowflake: SnowflakeSettings = Field(default_factory=SnowflakeSettings)
     generator: GeneratorSettings = Field(default_factory=GeneratorSettings)
+    otel: OtelSettings = Field(default_factory=OtelSettings)
 
     @field_validator("log_level", mode="before")
     @classmethod

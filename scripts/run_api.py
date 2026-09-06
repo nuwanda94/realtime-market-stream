@@ -11,6 +11,7 @@ import logging
 import sys
 
 from realtime_market_stream.config import get_settings
+from realtime_market_stream.observability.tracing import configure_tracing, shutdown_tracing
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -31,13 +32,17 @@ def main(argv: list[str] | None = None) -> int:
 
     settings = get_settings()
     logging.basicConfig(level=settings.log_level)
-    uvicorn.run(
-        "realtime_market_stream.serving.api:app",
-        host=args.host,
-        port=args.port,
-        reload=args.reload,
-        log_level=settings.log_level.lower(),
-    )
+    configure_tracing(settings)
+    try:
+        uvicorn.run(
+            "realtime_market_stream.serving.api:app",
+            host=args.host,
+            port=args.port,
+            reload=args.reload,
+            log_level=settings.log_level.lower(),
+        )
+    finally:
+        shutdown_tracing()
     return 0
 
 

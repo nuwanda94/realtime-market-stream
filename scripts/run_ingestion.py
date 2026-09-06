@@ -12,7 +12,9 @@ import argparse
 import logging
 import sys
 
+from realtime_market_stream.config.settings import get_settings
 from realtime_market_stream.ingestion.service import run_ingestion
+from realtime_market_stream.observability.tracing import configure_tracing, shutdown_tracing, start_span
 
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -44,7 +46,12 @@ def main(argv: list[str] | None = None) -> int:
         level=getattr(logging, str(args.log_level).upper(), logging.INFO),
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
-    stats = run_ingestion(source=args.source, websocket_url=args.ws_url, count=args.count)
+    configure_tracing(get_settings())
+    try:
+        with start_span("ingestion.run", source=args.source):
+            stats = run_ingestion(source=args.source, websocket_url=args.ws_url, count=args.count)
+    finally:
+        shutdown_tracing()
     print(
         f"published={stats.published} dlq={stats.dlq} "
         f"live={stats.source_live} synthetic={stats.source_synthetic}",

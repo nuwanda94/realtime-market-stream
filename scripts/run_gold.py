@@ -13,6 +13,7 @@ import logging
 import sys
 
 from realtime_market_stream.config.settings import get_settings
+from realtime_market_stream.observability.tracing import configure_tracing, shutdown_tracing, start_span
 from realtime_market_stream.processing.gold import run_gold
 from realtime_market_stream.sinks.delta import build_gold_sink
 
@@ -45,14 +46,19 @@ def main(argv: list[str] | None = None) -> int:
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
     settings = get_settings()
+    configure_tracing(settings)
     sink = build_gold_sink(settings, local_root=args.data_root or None)
-    stats = run_gold(
-        max_records=args.max_records,
-        lookback=args.lookback,
-        z_threshold=args.z_threshold,
-        sink=sink,
-        settings=settings,
-    )
+    try:
+        with start_span("processor.gold.run", lookback=args.lookback):
+            stats = run_gold(
+                max_records=args.max_records,
+                lookback=args.lookback,
+                z_threshold=args.z_threshold,
+                sink=sink,
+                settings=settings,
+            )
+    finally:
+        shutdown_tracing()
     print(
         "consumed={c} scored={s} anomalies={a} written={w} alerts={p} dlq={q}".format(
             c=stats.consumed,
