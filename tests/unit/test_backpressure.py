@@ -47,7 +47,9 @@ def test_inflight_disabled() -> None:
 
 
 def test_flow_controller_disabled_is_noop() -> None:
-    ctrl = FlowController(FlowControlSettings(enabled=False, ingest_max_per_sec=1, api_requests_per_sec=1))
+    ctrl = FlowController(
+        FlowControlSettings(enabled=False, ingest_max_per_sec=1, api_requests_per_sec=1)
+    )
     assert ctrl.allow_ingest() is True
     assert ctrl.allow_api() is True
     assert ctrl.enter_inflight() is True
