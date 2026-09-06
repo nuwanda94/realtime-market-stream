@@ -45,7 +45,7 @@ Progress is tracked in `TASKS.md`.
 - [x] **feat**: Snowflake Streaming sink (Snowpipe Streaming or Kafka connector path) — 2026-09-06 (`sinks/snowflake.py`, local JSONL capture + connector INSERT)
 - [x] **feat**: Dual-write mode (local Delta + optional Snowflake) — 2026-09-06 (`sinks/dual.py`)
 - [x] **chore**: Snowflake setup scripts (tables, stages, pipes, RBAC examples) — 2026-09-06 (`infra/snowflake/`, `make snowflake-setup`)
-- [ ] **feat**: Airflow DAGs (backfill, DQ checks, schema evolution)
+- [x] **feat**: Airflow DAGs (backfill, DQ checks, schema evolution) — 2026-09-06 (`orchestration/jobs.py`, `airflow/dags/`)
 - [ ] **fix**: Data quality rules (freshness, nulls, volume anomalies)
 - [ ] **chore**: Cost & performance documentation
 
