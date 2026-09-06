@@ -27,7 +27,7 @@ Use Conventional Commits (`feat:`, `chore:`, `fix:`) when implementing items.
 
 ### Phase 2 – Gold Layer, Analytics & Serving
 - [x] feat: Gold aggregations + anomaly scores — done 2026-09-06 (`processing/gold.py`, z-score + IQR on rolling OHLCV, `alerts` topic, `make gold`)
-- [ ] feat: FastAPI service
+- [x] feat: FastAPI service — done 2026-09-06 (`serving/api.py`, `serving/store.py`, `apps/api/main.py`, `make api`; `/health`, `/metrics`, `/ticks/latest`, `/ohlc`, `/anomalies`)
 - [ ] feat: Live Streamlit dashboard
 - [ ] feat: Query layer (DuckDB / Polars)
 - [ ] chore: OpenTelemetry instrumentation
