@@ -109,6 +109,10 @@ class SnowflakeSettings(BaseSettings):
 
     ``local_capture`` (default True) writes Snowpipe-Streaming-shaped JSONL
     batches locally so the sink works with zero cloud cost.
+
+    ``dual_write`` fans each Bronze/Silver/Gold batch to the lakehouse and
+    Snowflake. It is also implied by ``APP_ENV=snowflake`` or a fully
+    configured connection.
     """
 
     model_config = SettingsConfigDict(env_prefix="SNOWFLAKE_", extra="ignore")
@@ -135,10 +139,14 @@ class SnowflakeSettings(BaseSettings):
         default=True,
         description="Write JSONL batches locally instead of opening a Snowflake session.",
     )
+    dual_write: bool = Field(
+        default=False,
+        description="Fan each processor batch to lakehouse + Snowflake.",
+    )
 
-    @field_validator("local_capture", mode="before")
+    @field_validator("local_capture", "dual_write", mode="before")
     @classmethod
-    def _parse_local_capture(cls, value: object) -> object:
+    def _parse_bool(cls, value: object) -> object:
         if isinstance(value, str):
             return value.strip().lower() in {"1", "true", "yes", "on"}
         return value
@@ -264,7 +272,11 @@ class Settings(BaseSettings):
 
     @property
     def snowflake_dual_write_enabled(self) -> bool:
-        return self.app_env is AppEnv.SNOWFLAKE or self.snowflake.is_configured
+        return (
+            self.app_env is AppEnv.SNOWFLAKE
+            or self.snowflake.dual_write
+            or self.snowflake.is_configured
+        )
 
 
 def get_settings() -> Settings:

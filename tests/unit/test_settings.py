@@ -60,3 +60,9 @@ def test_get_settings_is_cached() -> None:
     second = get_settings()
     assert first is second
     clear_settings_cache()
+
+
+def test_dual_write_flag_enables_property() -> None:
+    settings = Settings(app_env=AppEnv.LOCAL, snowflake={"dual_write": True})
+    assert settings.snowflake.dual_write is True
+    assert settings.snowflake_dual_write_enabled is True
