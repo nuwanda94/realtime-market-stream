@@ -256,10 +256,7 @@ def check_volume_anomalies(
         ok=violations == 0,
         rows_scanned=scanned,
         violations=violations,
-        detail=(
-            f"non_positive={non_positive} iqr_outliers={outliers} "
-            f"multiplier={iqr_multiplier}"
-        ),
+        detail=(f"non_positive={non_positive} iqr_outliers={outliers} multiplier={iqr_multiplier}"),
         samples=samples,
     )
 
