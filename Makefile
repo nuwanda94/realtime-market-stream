@@ -4,7 +4,7 @@
 PYTHON ?= python3
 UV := $(shell command -v uv 2>/dev/null)
 
-.PHONY: help install install-dev lint format typecheck test test-unit test-integration pre-commit-install pre-commit clean compose-up compose-down generate-ticks create-topics ingest bronze silver replay-dlq ci
+.PHONY: help install install-dev lint format typecheck test test-unit test-integration pre-commit-install pre-commit clean compose-up compose-down generate-ticks create-topics ingest bronze silver gold replay-dlq ci
 
 help:
 	@echo "realtime-market-stream targets:"
@@ -21,6 +21,7 @@ help:
 	@echo "  make ingest              Publish ticks to Redpanda (COUNT=20 SOURCE=synthetic)"
 	@echo "  make bronze              Land raw-ticks into Bronze (MAX_RECORDS=20 BATCH_SIZE=10)"
 	@echo "  make silver              Dedup/enrich/window into Silver (MAX_RECORDS=20 WINDOW_SECONDS=60)"
+	@echo "  make gold                Score Silver bars (MAX_RECORDS=20 LOOKBACK=20 Z_THRESHOLD=3.0)"
 	@echo "  make replay-dlq          Replay DLQ onto raw-ticks (MAX_RECORDS=20 DRY_RUN=1 INSPECT=1)"
 	@echo "  make create-topics       Idempotently create Redpanda topics (DRY_RUN=1 to preview)"
 	@echo "  make pre-commit-install  Install git hooks (pre-commit + pre-push)"
@@ -76,6 +77,8 @@ WS_URL ?=
 MAX_RECORDS ?=
 BATCH_SIZE ?= 50
 WINDOW_SECONDS ?= 60
+LOOKBACK ?= 20
+Z_THRESHOLD ?= 3.0
 DATA_ROOT ?=
 INSPECT ?=
 ERROR_CONTAINS ?=
@@ -92,13 +95,15 @@ bronze:
 silver:
 	$(PYTHON) scripts/run_silver.py --window-seconds $(WINDOW_SECONDS) $(if $(MAX_RECORDS),--max-records $(MAX_RECORDS),) $(if $(DATA_ROOT),--data-root $(DATA_ROOT),)
 
+gold:
+	$(PYTHON) scripts/run_gold.py --lookback $(LOOKBACK) --z-threshold $(Z_THRESHOLD) $(if $(MAX_RECORDS),--max-records $(MAX_RECORDS),) $(if $(DATA_ROOT),--data-root $(DATA_ROOT),)
+
 replay-dlq:
 	$(PYTHON) scripts/run_dlq.py $(if $(MAX_RECORDS),--max-records $(MAX_RECORDS),) $(if $(DRY_RUN),--dry-run,) $(if $(INSPECT),--inspect,) $(if $(ERROR_CONTAINS),--error-contains $(ERROR_CONTAINS),)
 
 create-topics:
 	$(PYTHON) scripts/create_topics.py $(if $(DRY_RUN),--dry-run,)
 
-# Install both commit and push hooks so CI-equivalent checks run before push.
 pre-commit-install:
 	pre-commit install --hook-type pre-commit --hook-type pre-push
 
