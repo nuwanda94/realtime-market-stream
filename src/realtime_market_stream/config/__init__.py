@@ -2,6 +2,7 @@
 
 from realtime_market_stream.config.settings import (
     AppEnv,
+    FlowControlSettings,
     GeneratorSettings,
     KafkaSettings,
     LakehouseFormat,
@@ -16,6 +17,7 @@ from realtime_market_stream.config.settings import (
 
 __all__ = [
     "AppEnv",
+    "FlowControlSettings",
     "GeneratorSettings",
     "KafkaSettings",
     "LakehouseFormat",
