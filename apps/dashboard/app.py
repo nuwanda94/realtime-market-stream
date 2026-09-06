@@ -1,7 +1,7 @@
 """Live Streamlit dashboard over Bronze / Silver / Gold lakehouse files.
 
-    streamlit run apps/dashboard/app.py
-    make dashboard
+streamlit run apps/dashboard/app.py
+make dashboard
 """
 
 from __future__ import annotations
@@ -21,8 +21,8 @@ except ImportError as exc:  # pragma: no cover - optional extra
         "Streamlit extra missing. Install with: pip install -e '.[dashboard]'"
     ) from exc
 
-from realtime_market_stream.config import get_settings
-from realtime_market_stream.serving.dashboard import load_dashboard_payload
+from realtime_market_stream.config import get_settings  # noqa: E402
+from realtime_market_stream.serving.dashboard import load_dashboard_payload  # noqa: E402
 
 
 def _number(value: object) -> float | None:
