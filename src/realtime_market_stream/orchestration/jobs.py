@@ -119,13 +119,23 @@ def run_schema_evolution_check() -> SchemaCheckResult:
     for subject in SchemaSubject:
         live = build_json_schema(subject, version=SCHEMA_VERSION)
         bundled = load_bundled_schema(subject)
+        # Bundled docs may add wire-only keys (e.g. event_type) and require
+        # fields that have Pydantic defaults. Drift = model fields missing from
+        # the bundled document, not the reverse.
         live_props = set((live.get("properties") or {}).keys())
         bundled_props = set((bundled.get("properties") or {}).keys())
         live_required = set(live.get("required") or [])
         bundled_required = set(bundled.get("required") or [])
-        if live_props != bundled_props or live_required != bundled_required:
+        missing_props = live_props - bundled_props
+        missing_required = live_required - bundled_required
+        if missing_props or missing_required:
             drifted.append(subject.value)
-            logger.warning("schema drift on subject %s", subject.value)
+            logger.warning(
+                "schema drift on subject %s missing_props=%s missing_required=%s",
+                subject.value,
+                sorted(missing_props),
+                sorted(missing_required),
+            )
     return SchemaCheckResult(subjects=subjects, drifted=drifted, ok=not drifted)
 
 

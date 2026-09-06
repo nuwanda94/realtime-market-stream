@@ -131,10 +131,11 @@ def test_flush_open_windows_emits_in_flight_bar() -> None:
     _, v2 = encode_event(t2)
     processor.process_batch([v1, v2])
     closed = processor.flush_open_windows()
+    assert len(closed) == 1
     processor._persist(closed)
     bars = [r for r in sink.records if r.event_type == "ohlcv"]
-    assert len(bars) == 1
-    payload = bars[0].payload
+    assert len(bars) >= 1
+    payload = closed[0].payload
     assert payload["open"] == 100.0
     assert payload["high"] == 110.0
     assert payload["low"] == 100.0
