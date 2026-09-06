@@ -56,7 +56,9 @@ def main(argv: list[str] | None = None) -> int:
         print(str(exc), file=sys.stderr)
         return 1
 
-    print(json.dumps({"backend": str(engine.backend), "count": len(rows), "items": rows}, default=str))
+    print(
+        json.dumps({"backend": str(engine.backend), "count": len(rows), "items": rows}, default=str)
+    )
     return 0
 
 
