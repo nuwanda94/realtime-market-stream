@@ -86,6 +86,8 @@ Promote into Silver with `make silver MAX_RECORDS=50 WINDOW_SECONDS=60`. The Sil
 
 Inspect or replay the DLQ with `make replay-dlq INSPECT=1 MAX_RECORDS=20` (JSONL dump) or `make replay-dlq MAX_RECORDS=20` to republish payloads that now validate onto `raw-ticks`. Use `DRY_RUN=1` to classify without producing.
 
+Serve latest ticks / OHLC / anomalies with `make api` (FastAPI on `:8000`). For a live chart + alert view over the same JSONL lakehouse, install `pip install -e '.[dashboard]'` and run `make dashboard` (Streamlit on `:8501`).
+
 CI (GitHub Actions) runs ruff, mypy, pytest (3.11 + 3.12), and a package build on every push and pull request to `main`.
 
 ---
@@ -177,6 +179,8 @@ pytest -m broker          # optional; skipped unless localhost:19092 is up
 | http://localhost:9001 | MinIO Console (`minioadmin` / `minioadmin`) |
 | http://localhost:3000 | Grafana (`admin` / `admin`) |
 | http://localhost:9090 | Prometheus |
+| http://localhost:8000 | FastAPI (`make api`) |
+| http://localhost:8501 | Streamlit dashboard (`make dashboard`) |
 | localhost:19092 | Redpanda Kafka API |
 | localhost:5432 | Postgres (`airflow` / `airflow`) |
 

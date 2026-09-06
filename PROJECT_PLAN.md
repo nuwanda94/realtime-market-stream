@@ -35,7 +35,7 @@ Progress is tracked in `TASKS.md`.
 
 - [x] **feat**: Gold aggregations + anomaly scores (z-score / IQR) — 2026-09-06 (`processing/gold.py`, `sinks/gold.py`)
 - [x] **feat**: FastAPI service (latest ticks, OHLC, anomalies, health, metrics) — 2026-09-06 (`serving/api.py`, `make api`)
-- [ ] **feat**: Live Streamlit dashboard (charts, alerts, latency metrics)
+- [x] **feat**: Live Streamlit dashboard (charts, alerts, latency metrics) — 2026-09-06 (`serving/dashboard.py`, `apps/dashboard/app.py`, `make dashboard`)
 - [ ] **feat**: Query layer (DuckDB / Polars views over Delta)
 - [ ] **chore**: OpenTelemetry instrumentation
 - [ ] **fix**: Backpressure & rate limiting

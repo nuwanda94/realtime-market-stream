@@ -4,7 +4,7 @@
 PYTHON ?= python3
 UV := $(shell command -v uv 2>/dev/null)
 
-.PHONY: help install install-dev lint format typecheck test test-unit test-integration pre-commit-install pre-commit clean compose-up compose-down generate-ticks create-topics ingest bronze silver gold replay-dlq api ci
+.PHONY: help install install-dev lint format typecheck test test-unit test-integration pre-commit-install pre-commit clean compose-up compose-down generate-ticks create-topics ingest bronze silver gold replay-dlq api dashboard ci
 
 help:
 	@echo "realtime-market-stream targets:"
@@ -24,6 +24,7 @@ help:
 	@echo "  make gold                Score Silver bars (MAX_RECORDS=20 LOOKBACK=20 Z_THRESHOLD=3.0)"
 	@echo "  make replay-dlq          Replay DLQ onto raw-ticks (MAX_RECORDS=20 DRY_RUN=1 INSPECT=1)"
 	@echo "  make api                 Serve FastAPI (HOST=127.0.0.1 PORT=8000)"
+	@echo "  make dashboard           Live Streamlit UI (HOST=127.0.0.1 DASH_PORT=8501)"
 	@echo "  make create-topics       Idempotently create Redpanda topics (DRY_RUN=1 to preview)"
 	@echo "  make pre-commit-install  Install git hooks (pre-commit + pre-push)"
 	@echo "  make pre-commit          Run all pre-commit hooks on all files"
@@ -85,6 +86,7 @@ INSPECT ?=
 ERROR_CONTAINS ?=
 HOST ?= 127.0.0.1
 PORT ?= 8000
+DASH_PORT ?= 8501
 
 generate-ticks:
 	$(PYTHON) scripts/generate_ticks.py --count $(COUNT) $(if $(SYMBOLS),--symbols $(SYMBOLS),) $(if $(RATE),--rate $(RATE),)
@@ -106,6 +108,9 @@ replay-dlq:
 
 api:
 	$(PYTHON) scripts/run_api.py --host $(HOST) --port $(PORT)
+
+dashboard:
+	$(PYTHON) scripts/run_dashboard.py --host $(HOST) --port $(DASH_PORT)
 
 create-topics:
 	$(PYTHON) scripts/create_topics.py $(if $(DRY_RUN),--dry-run,)
