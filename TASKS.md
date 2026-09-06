@@ -36,7 +36,7 @@ Use Conventional Commits (`feat:`, `chore:`, `fix:`) when implementing items.
 ### Phase 3 – Snowflake Integration & Production Hardening
 - [x] feat: Snowflake Streaming sink — done 2026-09-06 (`sinks/snowflake.py`, local JSONL capture + connector INSERT path, `make snowflake-sink`)
 - [x] feat: Dual-write mode — done 2026-09-06 (`sinks/dual.py`, wraps Bronze/Silver/Gold)
-- [ ] chore: Snowflake setup scripts
+- [x] chore: Snowflake setup scripts — done 2026-09-06 (`infra/snowflake/*.sql`, `sinks/snowflake_setup.py`, `scripts/setup_snowflake.py`, `make snowflake-setup`)
 - [ ] feat: Airflow DAGs
 - [ ] fix: Data quality rules
 - [ ] chore: Cost & performance documentation
