@@ -26,7 +26,7 @@ Use Conventional Commits (`feat:`, `chore:`, `fix:`) when implementing items.
 - [x] chore: Unit + integration tests — done 2026-09-06 (`tests/unit/*`, `tests/integration/test_local_pipeline.py`, checkpoint + in-process pipeline)
 
 ### Phase 2 – Gold Layer, Analytics & Serving
-- [ ] feat: Gold aggregations + anomaly scores
+- [x] feat: Gold aggregations + anomaly scores — done 2026-09-06 (`processing/gold.py`, z-score + IQR on rolling OHLCV, `alerts` topic, `make gold`)
 - [ ] feat: FastAPI service
 - [ ] feat: Live Streamlit dashboard
 - [ ] feat: Query layer (DuckDB / Polars)

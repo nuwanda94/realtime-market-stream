@@ -33,7 +33,7 @@ Progress is tracked in `TASKS.md`.
 
 ## Phase 2 – Gold Layer, Analytics & Serving (v0.3-serving)
 
-- [ ] **feat**: Gold aggregations + anomaly scores (z-score / IQR)
+- [x] **feat**: Gold aggregations + anomaly scores (z-score / IQR) — 2026-09-06 (`processing/gold.py`, `sinks/gold.py`)
 - [ ] **feat**: FastAPI service (latest ticks, OHLC, anomalies, health, metrics)
 - [ ] **feat**: Live Streamlit dashboard (charts, alerts, latency metrics)
 - [ ] **feat**: Query layer (DuckDB / Polars views over Delta)
