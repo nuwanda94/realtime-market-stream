@@ -37,7 +37,7 @@ Progress is tracked in `TASKS.md`.
 - [x] **feat**: FastAPI service (latest ticks, OHLC, anomalies, health, metrics) — 2026-09-06 (`serving/api.py`, `make api`)
 - [x] **feat**: Live Streamlit dashboard (charts, alerts, latency metrics) — 2026-09-06 (`serving/dashboard.py`, `apps/dashboard/app.py`, `make dashboard`)
 - [x] **feat**: Query layer (DuckDB / Polars views over Delta) — 2026-09-06 (`serving/query.py`, `scripts/run_query.py`, `make query`)
-- [ ] **chore**: OpenTelemetry instrumentation
+- [x] **chore**: OpenTelemetry instrumentation — 2026-09-06 (`observability/tracing.py`, optional `.[otel]`, console/OTLP exporters)
 - [ ] **fix**: Backpressure & rate limiting
 
 ## Phase 3 – Snowflake Integration & Production Hardening (v0.4-snowflake)

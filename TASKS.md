@@ -30,7 +30,7 @@ Use Conventional Commits (`feat:`, `chore:`, `fix:`) when implementing items.
 - [x] feat: FastAPI service — done 2026-09-06 (`serving/api.py`, `serving/store.py`, `apps/api/main.py`, `make api`; `/health`, `/metrics`, `/ticks/latest`, `/ohlc`, `/anomalies`)
 - [x] feat: Live Streamlit dashboard — done 2026-09-06 (`serving/dashboard.py`, `apps/dashboard/app.py`, `make dashboard`)
 - [x] feat: Query layer (DuckDB / Polars) — done 2026-09-06 (`serving/query.py`, `scripts/run_query.py`, `make query`; JSONL fallback, optional `.[query]` extras)
-- [ ] chore: OpenTelemetry instrumentation
+- [x] chore: OpenTelemetry instrumentation — done 2026-09-06 (`observability/tracing.py`, optional `.[otel]` extras, `OTEL_*` settings; no-op when disabled)
 - [ ] fix: Backpressure & rate limiting
 
 ### Phase 3 – Snowflake Integration & Production Hardening

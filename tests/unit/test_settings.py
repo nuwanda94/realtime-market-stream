@@ -22,6 +22,9 @@ def test_local_defaults() -> None:
     assert settings.generator.tick_symbols == ["AAPL", "MSFT", "GOOG", "AMZN", "NVDA"]
     assert settings.generator.tick_rate_per_sec == 50
     assert settings.snowflake_dual_write_enabled is False
+    assert settings.otel.enabled is False
+    assert settings.otel.service_name == "realtime-market-stream"
+    assert settings.otel.exporter == "console"
 
 
 def test_tick_symbols_csv(monkeypatch: pytest.MonkeyPatch) -> None:
