@@ -34,7 +34,7 @@ Use Conventional Commits (`feat:`, `chore:`, `fix:`) when implementing items.
 - [x] fix: Backpressure & rate limiting — done 2026-09-06 (`processing/backpressure.py`, `FLOW_*` settings, ingest publisher gate, FastAPI 429)
 
 ### Phase 3 – Snowflake Integration & Production Hardening
-- [ ] feat: Snowflake Streaming sink
+- [x] feat: Snowflake Streaming sink — done 2026-09-06 (`sinks/snowflake.py`, local JSONL capture + connector INSERT path, `make snowflake-sink`)
 - [ ] feat: Dual-write mode
 - [ ] chore: Snowflake setup scripts
 - [ ] feat: Airflow DAGs

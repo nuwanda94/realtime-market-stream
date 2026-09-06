@@ -32,12 +32,21 @@ from realtime_market_stream.sinks.silver import (
     SilverRecord,
     SilverSink,
 )
+from realtime_market_stream.sinks.snowflake import (
+    ConnectorSnowflakeChannel,
+    InMemorySnowflakeChannel,
+    LocalJsonlSnowflakeChannel,
+    SnowflakeStreamingSink,
+    build_snowflake_sink,
+    records_to_snowflake_rows,
+)
 
 __all__ = [
     "BronzeDeltaSink",
     "BronzeIcebergSink",
     "BronzeRecord",
     "BronzeSink",
+    "ConnectorSnowflakeChannel",
     "DeltaLakeSink",
     "FilesystemBronzeSink",
     "FilesystemGoldSink",
@@ -50,12 +59,17 @@ __all__ = [
     "InMemoryBronzeSink",
     "InMemoryGoldSink",
     "InMemorySilverSink",
+    "InMemorySnowflakeChannel",
+    "LocalJsonlSnowflakeChannel",
     "SilverDeltaSink",
     "SilverIcebergSink",
     "SilverRecord",
     "SilverSink",
+    "SnowflakeStreamingSink",
     "build_bronze_sink",
     "build_gold_sink",
     "build_silver_sink",
+    "build_snowflake_sink",
     "records_to_rows",
+    "records_to_snowflake_rows",
 ]
