@@ -6,7 +6,7 @@ helpers talk to :class:`LakehouseStore` so unit tests and CI stay zero-cost.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from realtime_market_stream.config.settings import Settings, get_settings
@@ -22,7 +22,7 @@ def _parse_ts(value: object) -> datetime | None:
     except ValueError:
         return None
     if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=timezone.utc)
+        parsed = parsed.replace(tzinfo=UTC)
     return parsed
 
 
@@ -33,7 +33,7 @@ def latency_ms(row: dict[str, Any], *, now: datetime | None = None) -> float | N
     if event is None:
         return None
     ingested = _parse_ts(row.get("ingested_at"))
-    reference = ingested if ingested is not None else (now or datetime.now(timezone.utc))
+    reference = ingested if ingested is not None else (now or datetime.now(UTC))
     return max(0.0, (reference - event).total_seconds() * 1000.0)
 
 

@@ -13,7 +13,11 @@ import logging
 import sys
 
 from realtime_market_stream.config.settings import get_settings
-from realtime_market_stream.observability.tracing import configure_tracing, shutdown_tracing, start_span
+from realtime_market_stream.observability.tracing import (
+    configure_tracing,
+    shutdown_tracing,
+    start_span,
+)
 from realtime_market_stream.processing.silver import run_silver
 from realtime_market_stream.sinks.delta import build_silver_sink
 
@@ -58,15 +62,9 @@ def main(argv: list[str] | None = None) -> int:
     finally:
         shutdown_tracing()
     print(
-        "consumed={c} trades={t} dups={d} bars={b} written={w} published={p} dlq={q}".format(
-            c=stats.consumed,
-            t=stats.trades_accepted,
-            d=stats.duplicates,
-            b=stats.bars_closed,
-            w=stats.written,
-            p=stats.published,
-            q=stats.dlq,
-        ),
+        f"consumed={stats.consumed} trades={stats.trades_accepted} "
+        f"dups={stats.duplicates} bars={stats.bars_closed} "
+        f"written={stats.written} published={stats.published} dlq={stats.dlq}",
         file=sys.stderr,
     )
     return 0

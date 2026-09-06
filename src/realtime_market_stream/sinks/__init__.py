@@ -6,7 +6,6 @@ from realtime_market_stream.sinks.bronze import (
     FilesystemBronzeSink,
     InMemoryBronzeSink,
 )
-from realtime_market_stream.sinks.dual import DualWriteSink, DualWriteStats, maybe_wrap_dual_write
 from realtime_market_stream.sinks.delta import (
     BronzeDeltaSink,
     BronzeIcebergSink,
@@ -21,6 +20,7 @@ from realtime_market_stream.sinks.delta import (
     build_silver_sink,
     records_to_rows,
 )
+from realtime_market_stream.sinks.dual import DualWriteSink, DualWriteStats, maybe_wrap_dual_write
 from realtime_market_stream.sinks.gold import (
     FilesystemGoldSink,
     GoldRecord,
