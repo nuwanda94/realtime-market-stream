@@ -24,7 +24,11 @@ from typing import Any
 
 from realtime_market_stream.config.settings import Settings, get_settings
 from realtime_market_stream.ingestion.service import EventPublisher, KafkaEventPublisher, encode_dlq
-from realtime_market_stream.processing.bronze import EventConsumer, KafkaEventConsumer, decode_payload
+from realtime_market_stream.processing.bronze import (
+    EventConsumer,
+    KafkaEventConsumer,
+    decode_payload,
+)
 from realtime_market_stream.processing.checkpoint import (
     ConsumedRecord,
     FileCheckpointStore,
