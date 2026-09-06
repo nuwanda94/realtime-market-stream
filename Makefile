@@ -4,7 +4,7 @@
 PYTHON ?= python3
 UV := $(shell command -v uv 2>/dev/null)
 
-.PHONY: help install install-dev lint format typecheck test test-unit test-integration pre-commit-install pre-commit clean compose-up compose-down generate-ticks create-topics ingest bronze silver gold replay-dlq api dashboard query ci
+.PHONY: help install install-dev lint format typecheck test test-unit test-integration pre-commit-install pre-commit clean compose-up compose-down generate-ticks create-topics ingest bronze silver gold replay-dlq api dashboard query snowflake-sink ci
 
 help:
 	@echo "realtime-market-stream targets:"
@@ -26,6 +26,7 @@ help:
 	@echo "  make api                 Serve FastAPI (HOST=127.0.0.1 PORT=8000)"
 	@echo "  make dashboard           Live Streamlit UI (HOST=127.0.0.1 DASH_PORT=8501)"
 	@echo "  make query               Scan lakehouse views (VIEW=silver_ohlc SYMBOL=AAPL LIMIT=20)"
+	@echo "  make snowflake-sink      Flush ticks through Snowflake sink (COUNT=10 DATA_ROOT=)"
 	@echo "  make create-topics       Idempotently create Redpanda topics (DRY_RUN=1 to preview)"
 	@echo "  make pre-commit-install  Install git hooks (pre-commit + pre-push)"
 	@echo "  make pre-commit          Run all pre-commit hooks on all files"
@@ -119,6 +120,9 @@ dashboard:
 
 query:
 	$(PYTHON) scripts/run_query.py --view $(VIEW) --limit $(LIMIT) --backend $(BACKEND) $(if $(SYMBOLS),--symbol $(SYMBOLS),) $(if $(DATA_ROOT),--data-root $(DATA_ROOT),) $(if $(SQL),--sql $(SQL),)
+
+snowflake-sink:
+	$(PYTHON) scripts/run_snowflake_sink.py --count $(COUNT) $(if $(DATA_ROOT),--data-root $(DATA_ROOT),)
 
 create-topics:
 	$(PYTHON) scripts/create_topics.py $(if $(DRY_RUN),--dry-run,)
