@@ -55,3 +55,15 @@ MarketEvent = TradeTick | OhlcvBar
 
 DEFAULT_WINDOW_SECONDS = 60
 DEFAULT_SEEN_CAP = 50_000
+
+
+def floor_window(ts: datetime, window: timedelta) -> datetime:
+    """Align ``ts`` down to the tumbling-window boundary."""
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=UTC)
+    else:
+        ts = ts.astimezone(UTC)
+    epoch = int(ts.timestamp())
+    size = max(int(window.total_seconds()), 1)
+    start = epoch - (epoch % size)
+    return datetime.fromtimestamp(start, tz=UTC)
