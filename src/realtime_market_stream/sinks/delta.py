@@ -287,7 +287,7 @@ class BronzeIcebergSink:
     def __init__(self, inner: IcebergPartitionSink) -> None:
         self.inner = inner
 
-    def write(self, records: list[GoldRecord]) -> list[str]:
+    def write(self, records: list[BronzeRecord]) -> list[str]:
         return self.inner.write(list(records))
 
 
