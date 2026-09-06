@@ -90,6 +90,8 @@ Serve latest ticks / OHLC / anomalies with `make api` (FastAPI on `:8000`). For 
 
 Query Bronze / Silver / Gold views with `make query VIEW=silver_ohlc SYMBOLS=AAPL LIMIT=20`. The default backend walks JSONL partitions (zero extra deps). Install `pip install -e '.[query]'` to enable DuckDB SQL (`--sql`) and Polars DataFrames.
 
+Optional **OpenTelemetry** tracing is off by default (`OTEL_ENABLED=false`). Install `pip install -e '.[otel]'`, set `OTEL_ENABLED=true`, and use `OTEL_EXPORTER=console` (stderr spans, no collector) or `OTEL_EXPORTER=otlp` with `OTEL_EXPORTER_OTLP_ENDPOINT`. FastAPI and processor CLIs (`make ingest|bronze|silver|gold|api`) call `configure_tracing` and emit no-op spans when extras are missing.
+
 CI (GitHub Actions) runs ruff, mypy, pytest (3.11 + 3.12), and a package build on every push and pull request to `main`.
 
 ---
