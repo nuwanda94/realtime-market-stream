@@ -4,7 +4,7 @@
 PYTHON ?= python3
 UV := $(shell command -v uv 2>/dev/null)
 
-.PHONY: help install install-dev lint format typecheck test test-unit test-integration pre-commit-install pre-commit clean compose-up compose-down generate-ticks create-topics ingest bronze silver gold replay-dlq api dashboard query snowflake-sink snowflake-setup backfill schema-check freshness ci
+.PHONY: help install install-dev lint format typecheck test test-unit test-integration pre-commit-install pre-commit clean compose-up compose-down generate-ticks create-topics ingest bronze silver gold replay-dlq api dashboard query snowflake-sink snowflake-setup backfill schema-check freshness dq ci
 
 help:
 	@echo "realtime-market-stream targets:"
@@ -31,6 +31,7 @@ help:
 	@echo "  make backfill            Synthetic Bronze backfill without Kafka (COUNT=20 DATA_ROOT=)"
 	@echo "  make schema-check        Compare bundled JSON Schema to Pydantic models"
 	@echo "  make freshness           Lakehouse freshness probe (VIEW=bronze_ticks DATA_ROOT=)"
+	@echo "  make dq                 Data quality rules (VIEW=bronze_ticks DATA_ROOT=)"
 	@echo "  make create-topics       Idempotently create Redpanda topics (DRY_RUN=1 to preview)"
 	@echo "  make pre-commit-install  Install git hooks (pre-commit + pre-push)"
 	@echo "  make pre-commit          Run all pre-commit hooks on all files"
@@ -141,6 +142,9 @@ schema-check:
 
 freshness:
 	$(PYTHON) scripts/run_orchestration.py freshness --view $(VIEW) $(if $(DATA_ROOT),--data-root $(DATA_ROOT),)
+
+dq:
+	$(PYTHON) scripts/run_orchestration.py dq --view $(VIEW) $(if $(DATA_ROOT),--data-root $(DATA_ROOT),)
 
 create-topics:
 	$(PYTHON) scripts/create_topics.py $(if $(DRY_RUN),--dry-run,)
