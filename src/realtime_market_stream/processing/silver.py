@@ -50,3 +50,8 @@ from realtime_market_stream.sinks.delta import build_silver_sink
 from realtime_market_stream.sinks.silver import SilverRecord, SilverSink
 
 logger = logging.getLogger(__name__)
+
+MarketEvent = TradeTick | OhlcvBar
+
+DEFAULT_WINDOW_SECONDS = 60
+DEFAULT_SEEN_CAP = 50_000
