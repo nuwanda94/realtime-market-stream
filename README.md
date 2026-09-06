@@ -88,6 +88,8 @@ Inspect or replay the DLQ with `make replay-dlq INSPECT=1 MAX_RECORDS=20` (JSONL
 
 Serve latest ticks / OHLC / anomalies with `make api` (FastAPI on `:8000`). For a live chart + alert view over the same JSONL lakehouse, install `pip install -e '.[dashboard]'` and run `make dashboard` (Streamlit on `:8501`).
 
+Query Bronze / Silver / Gold views with `make query VIEW=silver_ohlc SYMBOLS=AAPL LIMIT=20`. The default backend walks JSONL partitions (zero extra deps). Install `pip install -e '.[query]'` to enable DuckDB SQL (`--sql`) and Polars DataFrames.
+
 CI (GitHub Actions) runs ruff, mypy, pytest (3.11 + 3.12), and a package build on every push and pull request to `main`.
 
 ---
