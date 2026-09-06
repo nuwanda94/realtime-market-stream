@@ -1,6 +1,6 @@
 """Delta Lake / Iceberg-shaped lakehouse sinks.
 
-Writes Bronze or Silver rows as append-only tables partitioned by
+Writes Bronze, Silver, or Gold rows as append-only tables partitioned by
 ``symbol`` + ``date`` (UTC event date). Default engine is Delta Lake
 (``deltalake`` + ``pyarrow``). Iceberg is the same physical layout with
 Hive partitions and a lightweight metadata sidecar so laptops work
@@ -8,7 +8,7 @@ without a catalog service.
 
 Storage:
 
-* Local path: ``data/{bucket}/{bronze|silver}/{ticks|bars}``
+* Local path: ``data/{bucket}/{bronze|silver|gold}/{ticks|bars}``
 * MinIO: ``s3://{bucket}/...`` when ``LAKEHOUSE_URI`` starts with ``s3://``
 
 ``deltalake`` / ``pyarrow`` are optional extras (``.[lakehouse]``). The
@@ -28,11 +28,12 @@ from uuid import uuid4
 
 from realtime_market_stream.config.settings import LakehouseFormat, Settings
 from realtime_market_stream.sinks.bronze import BronzeRecord
+from realtime_market_stream.sinks.gold import GoldRecord
 from realtime_market_stream.sinks.silver import SilverRecord
 
 logger = logging.getLogger(__name__)
 
-LakeRecord = BronzeRecord | SilverRecord
+LakeRecord = BronzeRecord | SilverRecord | GoldRecord
 
 PARTITION_COLUMNS: tuple[str, str] = ("symbol", "date")
 
@@ -44,11 +45,7 @@ class LakehouseSink(Protocol):
 
 
 def records_to_rows(records: list[LakeRecord]) -> list[dict[str, Any]]:
-    """Flatten sink records into table rows with partition columns.
-
-    Partition keys are ``symbol`` and ``date`` (copied from ``event_date``)
-    so Delta/Iceberg writers can hive-partition without extra mapping.
-    """
+    """Flatten sink records into table rows with partition columns."""
     rows: list[dict[str, Any]] = []
     for record in records:
         row: dict[str, Any] = {
@@ -66,13 +63,11 @@ def records_to_rows(records: list[LakeRecord]) -> list[dict[str, Any]]:
 
 
 def table_path(root: str, layer: str, table: str = "ticks") -> str:
-    """Return ``{root}/{layer}/{table}`` for local or object-store URIs."""
     root = root.rstrip("/")
     return f"{root}/{layer}/{table}"
 
 
 def minio_storage_options(settings: Settings) -> dict[str, str]:
-    """Storage options understood by ``deltalake`` / object-store."""
     parsed = urlparse(settings.minio.endpoint)
     return {
         "AWS_ACCESS_KEY_ID": settings.minio.access_key,
@@ -87,7 +82,7 @@ def minio_storage_options(settings: Settings) -> dict[str, str]:
 def _import_arrow() -> Any:
     try:
         import pyarrow as pa
-    except ImportError as exc:  # pragma: no cover - optional extra
+    except ImportError as exc:  # pragma: no cover
         raise RuntimeError(
             "Delta/Iceberg sinks require pyarrow. Install extras: pip install -e '.[lakehouse]'"
         ) from exc
@@ -97,7 +92,7 @@ def _import_arrow() -> Any:
 def _import_deltalake() -> Any:
     try:
         from deltalake import write_deltalake
-    except ImportError as exc:  # pragma: no cover - optional extra
+    except ImportError as exc:  # pragma: no cover
         raise RuntimeError(
             "Delta sink requires deltalake. Install extras: pip install -e '.[lakehouse]'"
         ) from exc
@@ -105,7 +100,6 @@ def _import_deltalake() -> Any:
 
 
 def rows_to_arrow_table(rows: list[dict[str, Any]]) -> Any:
-    """Build a pyarrow Table from flattened rows (string-typed extras)."""
     pa = _import_arrow()
     if not rows:
         return pa.table(
@@ -136,8 +130,6 @@ def rows_to_arrow_table(rows: list[dict[str, Any]]) -> Any:
 
 @dataclass
 class DeltaLakeSink:
-    """Append-only Delta table partitioned by symbol + date."""
-
     table_uri: str
     storage_options: Mapping[str, str] | None = None
     partition_by: tuple[str, ...] = PARTITION_COLUMNS
@@ -176,13 +168,6 @@ class DeltaLakeSink:
 
 @dataclass
 class IcebergPartitionSink:
-    """Iceberg-shaped Hive-partitioned Parquet writer (catalog-free).
-
-    Writes ``symbol=`` / ``date=`` partitions plus ``_iceberg/snap-*.json``
-    sidecars. Swap in pyiceberg + a REST/SQLite catalog later without
-    changing processors.
-    """
-
     table_uri: str
     partition_by: tuple[str, ...] = PARTITION_COLUMNS
 
@@ -222,7 +207,6 @@ class IcebergPartitionSink:
         dates = table.column("date").to_pylist()
         for idx, (symbol, date) in enumerate(zip(symbols, dates, strict=True)):
             grouped.setdefault((str(symbol), str(date)), []).append(idx)
-
         for (symbol, date), indices in grouped.items():
             part_dir = root / f"symbol={symbol}" / f"date={date}"
             part_dir.mkdir(parents=True, exist_ok=True)
@@ -275,8 +259,6 @@ def _resolve_table_uri(
 
 
 class BronzeDeltaSink:
-    """BronzeSink-compatible adapter over :class:`DeltaLakeSink`."""
-
     def __init__(self, inner: DeltaLakeSink) -> None:
         self.inner = inner
 
@@ -285,12 +267,18 @@ class BronzeDeltaSink:
 
 
 class SilverDeltaSink:
-    """SilverSink-compatible adapter over :class:`DeltaLakeSink`."""
-
     def __init__(self, inner: DeltaLakeSink) -> None:
         self.inner = inner
 
     def write(self, records: list[SilverRecord]) -> list[str]:
+        return self.inner.write(list(records))
+
+
+class GoldDeltaSink:
+    def __init__(self, inner: DeltaLakeSink) -> None:
+        self.inner = inner
+
+    def write(self, records: list[GoldRecord]) -> list[str]:
         return self.inner.write(list(records))
 
 
@@ -310,8 +298,15 @@ class SilverIcebergSink:
         return self.inner.write(list(records))
 
 
+class GoldIcebergSink:
+    def __init__(self, inner: IcebergPartitionSink) -> None:
+        self.inner = inner
+
+    def write(self, records: list[GoldRecord]) -> list[str]:
+        return self.inner.write(list(records))
+
+
 def build_bronze_sink(settings: Settings, *, local_root: str | Path | None = None) -> Any:
-    """Select Bronze sink from ``LAKEHOUSE_FORMAT``."""
     fmt = settings.lakehouse.format
     if fmt is LakehouseFormat.DELTA:
         return BronzeDeltaSink(
@@ -327,7 +322,6 @@ def build_bronze_sink(settings: Settings, *, local_root: str | Path | None = Non
 
 
 def build_silver_sink(settings: Settings, *, local_root: str | Path | None = None) -> Any:
-    """Select Silver sink from ``LAKEHOUSE_FORMAT``."""
     fmt = settings.lakehouse.format
     if fmt is LakehouseFormat.DELTA:
         return SilverDeltaSink(
@@ -340,3 +334,22 @@ def build_silver_sink(settings: Settings, *, local_root: str | Path | None = Non
     from realtime_market_stream.sinks.silver import FilesystemSilverSink
 
     return FilesystemSilverSink.from_settings(settings, local_root=local_root)
+
+
+def build_gold_sink(settings: Settings, *, local_root: str | Path | None = None) -> Any:
+    fmt = settings.lakehouse.format
+    if fmt is LakehouseFormat.DELTA:
+        return GoldDeltaSink(
+            DeltaLakeSink.from_settings(
+                settings, layer="gold", table="bars", local_root=local_root
+            )
+        )
+    if fmt is LakehouseFormat.ICEBERG:
+        return GoldIcebergSink(
+            IcebergPartitionSink.from_settings(
+                settings, layer="gold", table="bars", local_root=local_root
+            )
+        )
+    from realtime_market_stream.sinks.gold import FilesystemGoldSink
+
+    return FilesystemGoldSink.from_settings(settings, local_root=local_root)
