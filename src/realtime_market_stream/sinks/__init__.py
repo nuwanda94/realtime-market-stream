@@ -6,6 +6,7 @@ from realtime_market_stream.sinks.bronze import (
     FilesystemBronzeSink,
     InMemoryBronzeSink,
 )
+from realtime_market_stream.sinks.dual import DualWriteSink, DualWriteStats, maybe_wrap_dual_write
 from realtime_market_stream.sinks.delta import (
     BronzeDeltaSink,
     BronzeIcebergSink,
@@ -48,6 +49,8 @@ __all__ = [
     "BronzeSink",
     "ConnectorSnowflakeChannel",
     "DeltaLakeSink",
+    "DualWriteSink",
+    "DualWriteStats",
     "FilesystemBronzeSink",
     "FilesystemGoldSink",
     "FilesystemSilverSink",
@@ -70,6 +73,7 @@ __all__ = [
     "build_gold_sink",
     "build_silver_sink",
     "build_snowflake_sink",
+    "maybe_wrap_dual_write",
     "records_to_rows",
     "records_to_snowflake_rows",
 ]

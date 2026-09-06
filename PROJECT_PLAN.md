@@ -43,7 +43,7 @@ Progress is tracked in `TASKS.md`.
 ## Phase 3 – Snowflake Integration & Production Hardening (v0.4-snowflake)
 
 - [x] **feat**: Snowflake Streaming sink (Snowpipe Streaming or Kafka connector path) — 2026-09-06 (`sinks/snowflake.py`, local JSONL capture + connector INSERT)
-- [ ] **feat**: Dual-write mode (local Delta + optional Snowflake)
+- [x] **feat**: Dual-write mode (local Delta + optional Snowflake) — 2026-09-06 (`sinks/dual.py`)
 - [ ] **chore**: Snowflake setup scripts (tables, stages, pipes, RBAC examples)
 - [ ] **feat**: Airflow DAGs (backfill, DQ checks, schema evolution)
 - [ ] **fix**: Data quality rules (freshness, nulls, volume anomalies)
