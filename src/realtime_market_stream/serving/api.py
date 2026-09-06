@@ -18,12 +18,15 @@ from collections import defaultdict
 from typing import Any
 
 from fastapi import FastAPI, Query, Request
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel, Field
 
 from realtime_market_stream.config.settings import Settings, get_settings
 from realtime_market_stream.observability.tracing import instrument_fastapi, start_span
+from realtime_market_stream.processing.backpressure import FlowController, controller_from_settings
 from realtime_market_stream.serving.store import LakehouseStore, lakehouse_root
+
+_API_EXEMPT_PATHS = frozenset({"/health", "/metrics"})
 
 
 class HealthResponse(BaseModel):
@@ -53,6 +56,7 @@ class Metrics:
 
     def __init__(self) -> None:
         self.requests: dict[str, int] = defaultdict(int)
+        self.rate_limited: int = 0
         self.started_at = time.time()
 
     def inc(self, path: str) -> None:
@@ -72,6 +76,13 @@ class Metrics:
         for path, count in sorted(self.requests.items()):
             escaped = path.replace("\\", "\\\\").replace('"', '\\"')
             lines.append(f'rms_http_requests_total{{path="{escaped}"}} {count}')
+        lines.extend(
+            [
+                "# HELP rms_http_rate_limited_total Requests rejected with HTTP 429",
+                "# TYPE rms_http_rate_limited_total counter",
+                f"rms_http_rate_limited_total {self.rate_limited}",
+            ]
+        )
         return "\n".join(lines) + "\n"
 
 
@@ -79,12 +90,14 @@ def create_app(
     *,
     settings: Settings | None = None,
     store: LakehouseStore | None = None,
+    flow: FlowController | None = None,
 ) -> FastAPI:
     """Application factory used by uvicorn and tests."""
 
     resolved = settings or get_settings()
     lake_store = store or LakehouseStore(lakehouse_root(resolved))
     metrics = Metrics()
+    flow_ctrl = flow or controller_from_settings(resolved.flow)
 
     application = FastAPI(
         title="realtime-market-stream API",
@@ -94,11 +107,20 @@ def create_app(
     application.state.settings = resolved
     application.state.store = lake_store
     application.state.metrics = metrics
+    application.state.flow = flow_ctrl
     instrument_fastapi(application, resolved)
 
     @application.middleware("http")
-    async def _count_requests(request: Request, call_next: Any) -> Any:
-        metrics.inc(request.url.path)
+    async def _count_and_limit(request: Request, call_next: Any) -> Any:
+        path = request.url.path
+        if path not in _API_EXEMPT_PATHS and not flow_ctrl.allow_api():
+            metrics.rate_limited += 1
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "rate limit exceeded"},
+                headers={"Retry-After": "1"},
+            )
+        metrics.inc(path)
         return await call_next(request)
 
     @application.get("/health", response_model=HealthResponse)
