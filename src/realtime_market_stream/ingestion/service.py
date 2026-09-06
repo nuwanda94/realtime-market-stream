@@ -1,1 +1,1 @@
-PLACEHOLDER
+"""Ingestion service: live websocket client with synthetic fallback.\n\nPublishes schema-validated ticks to the raw-ticks topic. Payloads that fail\nvalidation are routed to the DLQ. The default source is synthetic so the stack\nruns with zero external cost.\n"""\n
