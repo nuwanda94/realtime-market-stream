@@ -102,9 +102,7 @@ def configure_tracing(settings: Settings | None = None) -> bool:
                     OTLPSpanExporter,
                 )
 
-                provider.add_span_processor(
-                    BatchSpanProcessor(OTLPSpanExporter(endpoint=endpoint))
-                )
+                provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter(endpoint=endpoint)))
             except ImportError:
                 logger.warning("OTLP exporter missing; falling back to console")
                 provider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
@@ -176,7 +174,7 @@ def instrument_fastapi(app: Any, settings: Settings | None = None) -> bool:
     try:
         FastAPIInstrumentor.instrument_app(app)
     except Exception:  # noqa: BLE001
-        logger.debug("FastAPI instrumentation failed", exc_info=True)
+        logger.debug("FastAPI instrumentation failed", exp_info=True)
         return False
     return True
 
